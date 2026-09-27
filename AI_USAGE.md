@@ -891,3 +891,326 @@ Loose ends:
 - **Not committed yet.** When you commit, include only `backend/app.py` and `AI_USAGE.md`. Leave out the `.pyc` files, the two `libraryconnect.db` files, and the new one at the repo root that running the tests created.
 - **Optional:** trim spaces in the search with `q.strip()`. Nothing requires it.
 `````
+
+### Turn 18 — 2026-09-26T20:40:32-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+great. move onto step 3.
+````
+
+#### Assistance and code contribution
+- Read the checkout tests and test fixture in `backend/tests/test_routes.py` (reviewed only).
+- `backend/app.py`:
+  - **Generated:** `_get_book_or_404` helper, `_checkout_response` helper, and full
+    implementations of `create_checkout` (POST /checkouts, now `status_code=201`, 404 for a
+    missing book) and `list_book_checkouts` (GET /books/{id}/checkouts, 404 for a missing
+    book, filtered by `book_id`, ordered by id). These replace the starter 501 stubs.
+  - **Modified existing code:** `get_book` (written in Turn 9) now calls `_get_book_or_404`
+    instead of its own inline lookup. Behavior is unchanged.
+- No applicant edits to application code observed since Turn 17.
+
+#### Verification
+- Executed `backend/.venv/Scripts/python -m pytest -q backend/tests`: 12 passed, 1 warning
+  (the Starlette/anyio DeprecationWarning from Turn 15).
+- Executed an ad-hoc TestClient script against a throwaway SQLite DB in the scratchpad
+  (not the applicant's database): POST /checkouts returned 201 with an id and date
+  `2026-01-12`; the book's checkouts list returned only its checkout; a book with no
+  checkouts returned `[]`; a missing book returned 404 `Book not found` on both endpoints;
+  an invalid date and a missing field each returned 422.
+- Not run: frontend tests and Postgres/Docker (planned for later steps).
+
+#### Assistant response — verbatim
+`````markdown
+Step 3 is done. The only code file changed is `backend/app.py`.
+
+**What changed:**
+- **`POST /checkouts`** returns 404 "Book not found" if the book doesn't exist. Otherwise it saves the checkout and returns it with its new `id` (201).
+- **`GET /books/{id}/checkouts`** returns 404 if the book doesn't exist. Otherwise it returns only that book's checkouts, in the order they were created. A book with no checkouts gives `[]`.
+- **New helper `_get_book_or_404`:** all three places that need "find the book or return 404" now share it. That includes `GET /books/{id}` from step 2, which I shortened to use it. It behaves the same as before.
+- **New helper `_checkout_response`,** matching the `_book_response` helper from step 2.
+
+**Verification:**
+- `pytest backend/tests`: **12 passed**, plus the same harmless Starlette warning. This is the step 3 checkpoint.
+- I also checked edge cases on a throwaway database: a book with no checkouts gives `[]`, a bad date or missing field gives 422, a missing book gives 404 on both endpoints, and dates come back as `2026-01-12`.
+
+To try it yourself, go to http://localhost:8000/docs and use **POST /checkouts** with a real `book_id`, then **GET /books/{book_id}/checkouts**. Nothing has been committed. The backend is now complete. Step 4 is the frontend API layer.
+`````
+
+### Turn 19 — 2026-09-26T20:43:22-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+how can i test step 3 myself
+````
+
+#### Assistance and code contribution
+- Question only. Gave manual testing steps for the step 3 checkout endpoints. No files read
+  or modified other than this log. No new applicant edits observed.
+
+#### Verification
+Not run this turn. The /docs steps are suggested checks. The expected results
+(201/404/422/`[]`, 12 passed) come from the Turn 18 test and ad-hoc runs.
+
+#### Assistant response — verbatim
+`````markdown
+Same setup as step 2: start the server, then use the docs page.
+
+### 1. Start the backend
+In PowerShell, from the `backend` folder:
+
+```powershell
+.venv\Scripts\python -m uvicorn app:app --reload
+```
+
+If the server is already running, it has picked up the step 3 code on its own.
+
+### 2. Try it at http://localhost:8000/docs
+On each endpoint, click **Try it out**, then **Execute**.
+
+1. **Get a book id.** Run **GET /books** and note an `id`. If the list is empty, create a book with **POST /books** first.
+2. **POST /checkouts** with that id. You should get **201**, and the response should include a checkout `id`.
+   ```json
+   {
+     "patron_name": "Marcus Webb",
+     "book_id": 1,
+     "date": "2026-01-12",
+     "notes": "First-time checkout"
+   }
+   ```
+3. **GET /books/{book_id}/checkouts** with the same id. Your checkout should be in the list.
+4. **Check the error cases:**
+   - Run **POST /checkouts** with `"book_id": 999999`. You should get **404 "Book not found"**.
+   - Run **GET /books/999999/checkouts**. You should get **404**.
+   - Run **POST /checkouts** with `"date": "tomorrow"`. You should get **422**, because the date must be `YYYY-MM-DD`.
+   - Run **GET /books/{id}/checkouts** on a book that has no checkouts. You should get `[]`.
+
+### 3. Run the tests
+Open a second PowerShell window. From the repo root (`blueprint-challenge-kc`), run:
+
+```powershell
+backend\.venv\Scripts\python -m pytest -q backend/tests
+```
+
+You should see **12 passed, 1 warning**. That's the same harmless Starlette warning as before.
+`````
+
+### Turn 20 — 2026-09-26T20:45:13-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+just to clarify, how does post /checkouts differ from post /books,
+````
+
+#### Assistance and code contribution
+- Question only. Compared `create_book` and `create_checkout` in `backend/app.py` and the
+  `BookCreate`/`CheckoutCreate` models in `backend/models.py`, from code already read this
+  session (reviewed, not modified). No files modified other than this log. No new applicant
+  edits observed.
+
+#### Verification
+Not run (question only). The behaviors described were exercised in the Turn 10 and Turn 18 runs.
+
+#### Assistant response — verbatim
+`````markdown
+They follow the same pattern: validate the input, save a row, and return it with a new `id` (201). The differences are in what they store and what they check.
+
+| | `POST /books` | `POST /checkouts` |
+|---|---|---|
+| **What it records** | A book in the catalog | One patron borrowing one book |
+| **Saved to** | `books` table | `checkouts` table |
+| **Fields** | title, genre, description, author, publisher_email, shelf_location | patron_name, book_id, date, notes |
+| **Automatic validation (422)** | genre must be one of the 6 allowed values, email must be valid, all fields required | date must be `YYYY-MM-DD`, book_id must be a number, all fields required |
+| **Extra check** | none | **The book must exist**, or it returns 404 "Book not found" |
+| **Depends on** | nothing | an existing book |
+
+**The key difference is the book check.** A checkout points at a book through `book_id`, so `create_checkout` first calls `_get_book_or_404`. That stops a checkout from being saved for a book that isn't in the catalog. `create_book` has nothing to look up, so it saves straight away.
+
+**One small technical difference:** books are saved with `model_dump(mode="json")`, which turns the genre into plain text like `"Fiction"` for the database. Checkouts use the default `model_dump()`, which keeps `date` as a real date for the database's date column.
+`````
+
+### Turn 21 — 2026-09-26T20:53:53-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+does post /checkouts work for more than 1 name for the same title
+````
+
+#### Assistance and code contribution
+- Question only. Searched `README.md` for the checkout requirements and ran an ad-hoc check.
+  No application code modified. No new applicant edits observed.
+
+#### Verification
+- Executed an ad-hoc TestClient script against a throwaway SQLite DB in the scratchpad:
+  created one book and three checkouts for it (Ana 2026-01-10, Ben 2026-01-10,
+  Ana 2026-01-11). All three returned 201, and GET /books/1/checkouts listed all three.
+
+#### Assistant response — verbatim
+`````markdown
+Yes. Any number of patrons can check out the same book, and the same patron can check it out more than once. Each checkout is saved as its own row with its own `id`.
+
+I tested it on a throwaway database. Three checkouts of one book all returned 201, and the book's history listed all three:
+
+```text
+(1, 'Ana', '2026-01-10')
+(2, 'Ben', '2026-01-10')   <- same day, different patron
+(3, 'Ana', '2026-01-11')   <- same patron again
+```
+
+**Why:** the only rule is "the book must exist." There's no check for whether the book is already checked out, and no "returned" tracking. The README treats checkouts as a **history log** ("record checkouts", "view checkouts associated with a book"), not as a live loan status, so this matches the spec.
+
+One note on "same title": checkouts are linked by **book `id`**, not by title. If two separate book records happen to share a title, each one has its own checkout history.
+`````
+
+### Turn 22 — 2026-09-26T20:58:18-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+is the limit for the number of possible patrons nonexistant? just curious
+````
+
+#### Assistance and code contribution
+- Question only. Answered from `backend/db_models.py` and `backend/models.py`, already read
+  this session (reviewed, not modified). Pointed out that `patron_name` has a 255-character
+  column limit (`String(255)`) that the Pydantic model does not validate. No files modified
+  other than this log. No new applicant edits observed.
+
+#### Verification
+Not run. The Postgres integer ceiling and the 500 error for over-length names are based on
+the column types and known database behavior. They were not tested, because Postgres is not
+available locally (Docker not installed, per Turn 6).
+
+#### Assistant response — verbatim
+`````markdown
+Right, the app sets no limit. Patrons aren't stored as their own records. Each checkout just holds a `patron_name` as text, so there's nothing to cap.
+
+The only real limits come from the database, and you won't hit them:
+- **Checkout ids:** the `id` column is a regular integer. On Postgres that tops out around **2.1 billion** checkouts.
+- **Disk space**, in practice.
+
+Two related things, just so you know:
+- **Name length:** `patron_name` is a `String(255)` column, but the API doesn't check length. On Postgres, a name over 255 characters would cause a server error (500) instead of a clean 422. SQLite doesn't enforce the limit, so you won't see it locally. It's unlikely with real names, and it could be tightened later if you want.
+- **No paging:** `GET /books/{id}/checkouts` returns every checkout for the book at once. That's fine at library scale.
+`````
+
+### Turn 23 — 2026-09-26T21:02:40-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+before moving on, is anything for step 3 incomplete, keep ur answer short
+````
+
+#### Assistance and code contribution
+- Question only. Compared step 3 against the Turn 2 plan checkpoint and ran `git status`.
+  No files modified other than this log. No new applicant edits to application code observed.
+
+#### Verification
+- Executed `git status --short` (application changes still uncommitted).
+- Test status relies on the Turn 18 run (12 passed). Tests were not re-run this turn.
+
+#### Assistant response — verbatim
+`````markdown
+No. Step 3 is complete: both checkout endpoints work, and all 12 backend tests pass. That was the step 3 checkpoint.
+
+Loose ends, none of them required:
+- **Not committed yet.** Commit `backend/app.py` and `AI_USAGE.md` only. Leave out the `.pyc` and `libraryconnect.db` files.
+- **Optional:** a length check on `patron_name` (see my last answer). Also still optional from step 2: trimming spaces in the search with `q.strip()`.
+- **Not tested on Postgres yet.** That's planned for step 7.
+`````
+
+### Turn 24 — 2026-09-26T21:05:18-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+go ahead with both optional improvements, but dont change anything that shouldn't be changed
+````
+
+#### Assistance and code contribution
+- **Modified existing code** in `backend/app.py`, `list_books` (written in Turn 9): added
+  `q = q.strip() if q else q` so leading and trailing spaces are ignored and a search of
+  only spaces is treated as no search.
+- **Modified existing starter code** in `backend/models.py`, `CheckoutCreate`: changed
+  `patron_name: str` to `patron_name: str = Field(max_length=255)` with a one-line comment,
+  and added `Field` to the pydantic import.
+- Searched the frontend for `patron_name` usage (reviewed only). The frontend, tests, and
+  other fields were left unchanged per the applicant's instruction.
+- **Observed applicant action:** `git log` shows a new commit `824bd00 book endpoints done`
+  (step 2) that was not made by the assistant. The Edit tool also reported that
+  `backend/app.py` had changed on disk since the assistant last read it with that tool. The
+  full `git diff HEAD` showed only the assistant's Turn 18 step 3 changes plus this turn's
+  edits, and no other content changes.
+
+#### Verification
+- Executed `git diff HEAD -- backend/app.py backend/models.py`: diff limited to step 3
+  (Turn 18) and this turn's changes.
+- Executed `backend/.venv/Scripts/python -m pytest -q backend/tests`: 12 passed, 1 warning.
+- Executed an ad-hoc TestClient script against a throwaway SQLite DB in the scratchpad:
+  `q="  career  "` returned `['Career Skills']`, `q="   "` returned both books,
+  `q="career"` returned `['Career Skills']`, a 255-character patron_name returned 201, a
+  256-character name returned 422 "String should have at most 255 characters", and a normal
+  checkout returned 201.
+- Not run: frontend tests, Postgres.
+
+#### Assistant response — verbatim
+`````markdown
+Both improvements are in. Each is a one-line code change, and nothing else was touched.
+
+**1. Search trims spaces** (`list_books` in `backend/app.py`)
+```python
+q = q.strip() if q else q
+```
+Now `"  career  "` finds "Career Skills", and a search of only spaces is treated like a blank search, so it shows all books.
+
+**2. Patron name length check** (`CheckoutCreate` in `backend/models.py`)
+```python
+patron_name: str = Field(max_length=255)
+```
+A name over 255 characters now gets a clean **422** ("String should have at most 255 characters") instead of a possible database error on Postgres. I also added the `Field` import and a one-line comment.
+
+**Left alone on purpose:** the other text fields, the frontend, the tests, and the rest of the endpoint code. I checked the full diff, and it contains only the step 3 work and these two changes. The diff also shows you've committed step 2 ("book endpoints done").
+
+**Verification:**
+- `pytest backend/tests`: **12 passed**, 1 warning (the same Starlette one).
+- Checked on a throwaway database:
+  - `"  career  "` returns 1 match.
+  - `"   "` returns all books.
+  - A 255-character name returns 201, and a 256-character name returns 422.
+  - A normal checkout still returns 201.
+
+Nothing is committed yet.
+`````

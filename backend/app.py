@@ -74,6 +74,7 @@ def list_books(
     db: Session = Depends(get_db),
 ) -> list[BookResponse]:
     query = select(db_models.Book).order_by(db_models.Book.id)
+    q = q.strip() if q else q
     if q:
         # Case-insensitive "title contains q"; autoescape treats % and _ literally.
         query = query.where(db_models.Book.title.icontains(q, autoescape=True))
@@ -82,25 +83,39 @@ def list_books(
     return [_book_response(book) for book in db.scalars(query)]
 
 
-@app.get("/books/{book_id}", response_model=BookResponse)
-def get_book(book_id: int, db: Session = Depends(get_db)) -> BookResponse:
+def _get_book_or_404(db: Session, book_id: int) -> db_models.Book:
     book = db.get(db_models.Book, book_id)
     if book is None:
         raise HTTPException(status_code=404, detail="Book not found")
-    return _book_response(book)
+    return book
 
 
-@app.post("/checkouts", response_model=CheckoutResponse)
+@app.get("/books/{book_id}", response_model=BookResponse)
+def get_book(book_id: int, db: Session = Depends(get_db)) -> BookResponse:
+    return _book_response(_get_book_or_404(db, book_id))
+
+
+def _checkout_response(checkout: db_models.Checkout) -> CheckoutResponse:
+    return CheckoutResponse.model_validate(checkout, from_attributes=True)
+
+
+@app.post("/checkouts", response_model=CheckoutResponse, status_code=201)
 def create_checkout(payload: CheckoutCreate, db: Session = Depends(get_db)) -> CheckoutResponse:
-    _ = payload
-    _ = db
-    # TODO: Validate book exists, then create and return checkout.
-    raise HTTPException(status_code=501, detail="TODO: implement POST /checkouts")
+    _get_book_or_404(db, payload.book_id)
+    # Default (python) mode keeps `date` as a date object for the Date column.
+    checkout = db_models.Checkout(**payload.model_dump())
+    db.add(checkout)
+    db.commit()
+    db.refresh(checkout)
+    return _checkout_response(checkout)
 
 
 @app.get("/books/{book_id}/checkouts", response_model=list[CheckoutResponse])
 def list_book_checkouts(book_id: int, db: Session = Depends(get_db)) -> list[CheckoutResponse]:
-    _ = book_id
-    _ = db
-    # TODO: Return checkouts associated with the given book.
-    raise HTTPException(status_code=501, detail="TODO: implement GET /books/{id}/checkouts")
+    _get_book_or_404(db, book_id)
+    query = (
+        select(db_models.Checkout)
+        .where(db_models.Checkout.book_id == book_id)
+        .order_by(db_models.Checkout.id)
+    )
+    return [_checkout_response(checkout) for checkout in db.scalars(query)]
