@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createBook, createCheckout, getBook, listBookCheckouts, listBooks } from './api/api'
 import './App.css'
 import CheckoutForm from './components/CheckoutForm'
 import BookDetail from './components/BookDetail'
@@ -22,6 +23,10 @@ const initialCheckoutForm: CheckoutFormValues = {
   notes: '',
 }
 
+function errorText(err: unknown): string {
+  return err instanceof Error ? err.message : 'Something went wrong. Please try again.'
+}
+
 function App() {
   const [books, setBooks] = useState<Book[]>([])
   const [selectedBook, setSelectedBook] = useState<Book | null>(null)
@@ -31,49 +36,81 @@ function App() {
   const [bookForm, setBookForm] = useState<BookFormValues>(initialBookForm)
   const [checkoutForm, setCheckoutForm] = useState<CheckoutFormValues>(initialCheckoutForm)
   const [error, setError] = useState<string | null>(null)
+  // Bumping this re-runs the book list effect (e.g. after creating a book).
+  const [booksVersion, setBooksVersion] = useState(0)
+  // Id of the most recently clicked book, so a slow earlier response can't overwrite it.
+  const latestSelectedId = useRef<number | null>(null)
 
-  async function handleLoadBooks() {
-    void search
-    void genreFilter
-    void setBooks
-    // TODO: Implement book list loading using src/api/api.ts.
-    setError('TODO: implement handleLoadBooks in App.tsx')
+  // Load books on mount and whenever the search, genre, or booksVersion changes.
+  useEffect(() => {
+    let ignore = false
+    listBooks({ q: search, genre: genreFilter })
+      .then((result) => {
+        if (ignore) return
+        setBooks(result)
+        setError(null)
+      })
+      .catch((err: unknown) => {
+        if (!ignore) setError(errorText(err))
+      })
+    // Ignore responses for an older search once a newer one has started.
+    return () => {
+      ignore = true
+    }
+  }, [search, genreFilter, booksVersion])
+
+  function handleLoadBooks() {
+    setBooksVersion((version) => version + 1)
   }
 
   async function handleSelectBook(bookId: number) {
-    void bookId
-    void setSelectedBook
-    void setBookCheckouts
-    void setCheckoutForm
-    // TODO: Implement selected book + checkouts fetch using src/api/api.ts.
-    setError('TODO: implement handleSelectBook in App.tsx')
+    latestSelectedId.current = bookId
+    setError(null)
+    try {
+      const [book, checkouts] = await Promise.all([getBook(bookId), listBookCheckouts(bookId)])
+      if (latestSelectedId.current !== bookId) return
+      setSelectedBook(book)
+      setBookCheckouts(checkouts)
+      setCheckoutForm((form) => ({ ...form, book_id: String(bookId) }))
+    } catch (err) {
+      if (latestSelectedId.current === bookId) setError(errorText(err))
+    }
   }
 
   function handleBookFormChange(next: BookFormValues) {
-    void next
-    // TODO: Implement book form state handling.
-    setError('TODO: implement book form state updates in App.tsx')
+    setBookForm(next)
   }
 
   function handleCheckoutFormChange(next: CheckoutFormValues) {
-    void next
-    // TODO: Implement checkout form state handling.
-    setError('TODO: implement checkout form state updates in App.tsx')
+    setCheckoutForm(next)
   }
 
   async function handleCreateBook() {
-    void bookForm
-    void setBookForm
-    // TODO: Implement book creation flow using src/api/api.ts.
-    setError('TODO: implement handleCreateBook in App.tsx')
+    setError(null)
+    try {
+      await createBook(bookForm)
+      setBookForm(initialBookForm)
+      // Refetch so the new book shows up only if it matches the current filters.
+      setBooksVersion((version) => version + 1)
+    } catch (err) {
+      setError(errorText(err))
+    }
   }
 
   async function handleCreateCheckout() {
-    void checkoutForm
-    void selectedBook
-    void setCheckoutForm
-    // TODO: Implement checkout creation flow using src/api/api.ts.
-    setError('TODO: implement handleCreateCheckout in App.tsx')
+    setError(null)
+    try {
+      const created = await createCheckout(checkoutForm)
+      if (selectedBook && created.book_id === selectedBook.id) {
+        setBookCheckouts((checkouts) => [...checkouts, created])
+      }
+      setCheckoutForm({
+        ...initialCheckoutForm,
+        book_id: selectedBook ? String(selectedBook.id) : '',
+      })
+    } catch (err) {
+      setError(errorText(err))
+    }
   }
 
   return (

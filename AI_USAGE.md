@@ -1680,3 +1680,457 @@ No. Step 4 is complete. I just re-checked: no `TODO`s are left in `api.ts`, and 
 
 The only loose end is that **it isn't committed yet**. Commit `frontend/src/api/api.ts` and `AI_USAGE.md`. `node_modules` is already ignored by git, so it won't sneak in.
 `````
+
+### Turn 35 — 2026-09-27T13:46:59-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+okay. move onto step 5.
+````
+
+#### Assistance and code contribution
+- Read `frontend/src/App.tsx`, `frontend/src/App.test.tsx`, `frontend/src/components/*.tsx`,
+  and `scripts/check_readiness.py` (reviewed only).
+- `frontend/src/App.tsx`:
+  - **Generated:** replacements for the six starter handler stubs (`handleLoadBooks`,
+    `handleSelectBook`, `handleBookFormChange`, `handleCheckoutFormChange`,
+    `handleCreateBook`, `handleCreateCheckout`); a new `errorText` helper; a `useEffect`
+    that loads books on mount and when `search`, `genreFilter`, or the new `booksVersion`
+    state changes, ignoring stale responses; and a `latestSelectedId` ref that guards
+    View Details against out-of-order responses.
+  - **Modified starter code:** the React import (added `useEffect`, `useRef`) and a new
+    import of the five API functions. The JSX, the "Integration TODO" card, and the header
+    text were left unchanged (planned for step 6).
+  - One follow-up edit this turn: removed `async` from `handleLoadBooks`.
+- **Observed applicant action:** `git log` shows a new commit `4fad9a7 frontend api layer`
+  (step 4), not made by the assistant. The backend (port 8000) and the Vite dev server
+  (port 5173) were already running, started by the applicant.
+
+#### Verification
+- Executed from `frontend/` (Node from the default Program Files install):
+  `npx.cmd tsc -p tsconfig.app.json --noEmit` and `npx.cmd tsc -b` exited 0;
+  `npx.cmd eslint src/App.tsx` and `npx.cmd eslint .` exited 0; `npx.cmd jest` reported
+  3 suites passed and 20 tests passed (first run before the `async` removal, then again
+  after it), with no act()/warning lines found by grep.
+- Executed `python scripts/check_readiness.py`: `ready=true`.
+- Executed `backend/.venv/Scripts/python -m pytest -q backend/tests`: 12 passed, 1 warning.
+- Executed `curl` against the applicant's running servers: `GET /` returned
+  `{"status":"ok"}`, and the frontend returned 200. `GET /books` returned the applicant's
+  two books (read-only).
+- Built-in browser pane, http://localhost:5173 (read-only; no create actions, so the
+  applicant's database was not changed): the network log showed `GET /books` 200 and both
+  books rendered. Setting the search to "career" (form_input) left one book. Clicking View
+  Details (via a JavaScript click, because the pane could not draw for a mouse click)
+  showed the book's details and checkout "Marcus Webb 2026-01-12", no error message, and
+  the checkout form's book select set to "1".
+- Not run: create book/checkout through the real UI (avoided writing to the applicant's DB),
+  Postgres/Docker.
+
+#### Assistant response — verbatim
+`````markdown
+Step 5 is done, and the app now works end to end. The only file changed is `frontend/src/App.tsx`.
+
+**What changed:** each `TODO` handler now uses the step 4 API functions.
+1. **Form typing:** `handleBookFormChange` and `handleCheckoutFormChange` now save what you type. Before, typing did nothing.
+2. **Loading books:** the list loads when the page opens and reloads automatically whenever the search or genre changes. If you type quickly, an older, slower response can't overwrite a newer one. The "Load Books" button still works as a manual refresh.
+3. **View Details:** loads the book and its checkout history together, and pre-selects that book in the checkout form.
+4. **Create Book:** saves the book, clears the form, and refreshes the list. The new book appears if it matches the current filters.
+5. **Create Checkout:** saves the checkout, adds it to the history if that book is open, and resets the form, keeping the selected book.
+6. **Errors:** each action clears the old error first. If something fails, you see the backend's message, such as "Book not found".
+
+**Verification:**
+- Frontend `jest`: **20/20 passed** (App, component, and API tests).
+- `check_readiness.py`: **`ready=true`**, meaning no starter TODO stubs remain.
+- `tsc -b` and `eslint .`: no errors.
+- Backend `pytest`: still **12 passed**.
+- **Real app check:** your backend and frontend were already running, so I opened `localhost:5173` in my browser pane. I only did read-only checks, so nothing was added to your database. The books loaded on open. Searching "career" narrowed the list to one book. View Details showed the book and its checkout (Marcus Webb), with no errors, and the checkout form's Book field was pre-selected.
+
+**Not done yet (step 6):** the "Integration TODO" card, the "(TODO API)" button label, and the placeholder header text are still there. There's also no form validation, no empty-list message, and no success confirmation yet. Nothing has been committed.
+`````
+
+### Turn 36 — 2026-09-27T14:21:25-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+give me a sample to test step 5
+````
+
+#### Assistance and code contribution
+- Question only. Wrote a manual UI test walkthrough with sample data for step 5, based on
+  the Turn 35 `App.tsx` code. No files read or modified other than this log. No new
+  applicant edits observed.
+
+#### Verification
+Not run this turn. The walkthrough is a suggested check. The expected outcomes follow
+from the code and the Turn 35 tests. The create-book, create-checkout, invalid-email, and
+backend-down steps have not been executed in the real UI by the assistant; the exact
+wording of the email error and of "Failed to fetch" is expected, not observed.
+
+#### Assistant response — verbatim
+`````markdown
+Here's a quick walkthrough with sample data. Your backend and frontend are already running, so just open **http://localhost:5173**. Everything you add here is saved to your local `backend/libraryconnect.db`.
+
+### 1. Create a book
+In **Create Book**, enter:
+
+| Field | Value |
+|---|---|
+| Title | `The Hobbit` |
+| Genre | `Fiction` |
+| Description | `A hobbit goes on an adventure` |
+| Author | `J.R.R. Tolkien` |
+| Publisher Email | `contact@allenandunwin.org` |
+| Shelf Location | `FIC-TOL-001` |
+
+Click **Create Book**. ✅ The form clears, and "The Hobbit" appears in **Books**.
+
+### 2. Search and filter
+In **Books**:
+- Type `hob` in Search. ✅ Only The Hobbit shows.
+- Change Genre to `Reference`. ✅ The list is empty, because The Hobbit is Fiction.
+- Clear the search and set Genre back to `All`. ✅ All books are back.
+
+### 3. View details
+Click **View Details** on The Hobbit. ✅ The details card shows its author, email, shelf location, and an empty Checkouts list. The checkout form's **Book** field is pre-set to "The Hobbit."
+
+### 4. Record a checkout
+In **Create Checkout**, enter:
+
+| Field | Value |
+|---|---|
+| Patron Name | `Priya Nair` |
+| Book | *(already The Hobbit)* |
+| Date | `2026-02-15` |
+| Notes | `Due back in 3 weeks` |
+
+Click **Create Checkout**. ✅ "Priya Nair" appears under the Hobbit's Checkouts right away. Add a second checkout, for example `Marcus Webb`, to see both listed.
+
+### 5. Check the errors
+- In Create Book, enter `not-an-email` as the Publisher Email and fill in the rest. Click **Create Book**. ✅ A red error appears ("value is not a valid email address…"), and the form keeps what you typed.
+- Stop the backend (Ctrl+C in its window) and change the search. ✅ A red "Failed to fetch" error appears. Restart the backend and change the search again. ✅ The error clears.
+
+The rough wording of these errors ("Failed to fetch") is something step 6 can make friendlier.
+`````
+
+### Turn 37 — 2026-09-27T14:30:08-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+side note about the 'view details' button, i was able to click on it, but there was no respective text or button or outline for it, i just randomly clicked below the title and was shown the details box like you mentioned. is that intentional? ive provided an image of what i see on the search box
+````
+Attachment: one screenshot (`1.png`), used to show the issue. It shows the Books list
+with three rows ("Career Skills Handbook" Reference, "Breaking Bad" Fiction, "The Hobbit"
+Fiction), with no visible View Details button and the genre text directly against the title.
+
+#### Assistance and code contribution
+- Investigated the invisible "View Details" button. Read `frontend/src/App.css` and
+  `frontend/src/index.css` (reviewed only). Cause: `.list button` sets a transparent
+  background with no border but inherits `color: #fff` from the global `button` rule, and
+  it is `width: 100%`. `.tag` has no CSS rule. Both are starter code (`git log` shows only
+  the initial commit touching these files).
+- No files modified other than this log. Proposed a CSS-only fix and asked the applicant
+  whether to apply it now or in step 6.
+
+#### Verification
+- Executed `git log -- frontend/src/App.css frontend/src/index.css`: only `2a48b0f Initial commit`.
+- Executed JavaScript in the built-in browser pane at http://localhost:5173 to read the
+  computed styles of the first `.list button`: color `rgb(255, 255, 255)`, background
+  `rgba(0, 0, 0, 0)`, border `none`, width `832.812px`, text "View Details". The `.tag`
+  left margin was `0px`.
+
+#### Assistant response — verbatim
+`````markdown
+No, it isn't intentional. It's a styling bug in the **starter CSS** (`frontend/src/App.css`, unchanged since the initial commit), not in step 5. The button is there. It's just **white text on a white background**.
+
+I checked the button's styles in my browser pane, and this is the cause:
+- A general `button` rule makes all buttons dark with **white text**.
+- A more specific `.list button` rule then makes list buttons **transparent with no border**, but it never resets the text color.
+- Result: a white "View Details" label on a white card. On top of that, the button stretches across the full row width (833px), which is why clicking anywhere under the title worked.
+
+Your screenshot shows a second, related gap: `.tag` (the genre label, and the date on checkouts) has **no CSS at all**, so "Handbook" and "Reference" run together.
+
+**Suggested fix** (CSS only, in `App.css`, no logic changes):
+- Give `.list button` a visible style, such as a small outlined button that isn't full width.
+- Add a `.tag` style: a small gray label with spacing.
+- Lay out each row with the title on the left and the button on the right.
+
+This fits step 6 (UX polish and light styling). Want me to make this fix now, or fold it into step 6?
+`````
+
+### Turn 38 — 2026-09-27T14:34:51-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+how do i stop the backend and change the search text
+````
+
+#### Assistance and code contribution
+- Question only. Explained how to stop and restart the backend and trigger the
+  backend-down error from the Turn 36 walkthrough. No files read or modified other than
+  this log. No new applicant edits observed. The assistant did not stop or restart any of
+  the applicant's servers.
+
+#### Verification
+Not run (instructions only). The "Failed to fetch" message is expected browser behavior
+and was not observed by the assistant.
+
+#### Assistant response — verbatim
+`````markdown
+This is part of step 5 in my test walkthrough: checking that errors appear when the backend is down.
+
+### 1. Stop the backend
+1. Find the PowerShell window where you ran `uvicorn app:app --reload`. It shows lines like `Uvicorn running on http://127.0.0.1:8000`.
+2. Click inside that window, then press **Ctrl+C**.
+3. Wait for the `PS ...\backend>` prompt to come back. The backend is now off.
+
+Leave the **frontend** window (`npm.cmd run dev`) running. Only the backend should stop.
+
+### 2. Change the search text
+1. Go to the app at **http://localhost:5173** in Edge.
+2. Click the **Search** box in the **Books** section and type any letter, for example `a`.
+
+✅ A red **"Failed to fetch"** message appears near the top of the page, because the app can't reach the backend.
+
+### 3. Turn the backend back on
+1. In the backend window, press the **Up arrow** to bring back the last command, or type it again:
+   ```powershell
+   .venv\Scripts\python -m uvicorn app:app --reload
+   ```
+2. Wait for `Application startup complete.`
+3. Back in the app, change the search again. For example, delete the `a`.
+
+✅ The red error goes away and your books show again. Your data is safe: stopping the backend doesn't delete anything, because books are saved in `libraryconnect.db`.
+`````
+
+### Turn 39 — 2026-09-27T14:38:27-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+i dont recall running that uvicorn command
+````
+
+#### Assistance and code contribution
+- Investigated which processes serve ports 8000 and 5173 (read-only). No files modified
+  other than this log. No processes were started or stopped.
+
+#### Verification
+- Executed a PowerShell check (`Get-NetTCPConnection` + `Win32_Process`): port 8000 is PID
+  42340, command `backend\.venv\Scripts\python.exe -m uvicorn app:app --reload`, started
+  2026-09-27 12:45:33. Its parent chain is python.exe (uvicorn reloader) → powershell.exe
+  (started 12:45:14) → WindowsTerminal.exe. Port 5173 is PID 4696, `node ... vite.js`,
+  started 12:45:53, with parent `cmd.exe /d /s /c vite`.
+- Who typed the command is not observable. The assistant did not start these servers, and
+  the timing is consistent with the applicant following the Turn 29 instructions.
+
+#### Assistant response — verbatim
+`````markdown
+I checked what's actually running. The backend **is** running from that exact command:
+
+```text
+backend\.venv\Scripts\python.exe -m uvicorn app:app --reload
+```
+
+It was started at **12:45 PM today** from a **PowerShell tab in Windows Terminal**, not by me. I haven't started or stopped any servers. The frontend (`vite`) was started about 20 seconds later. The timing fits the step 4 browser-console instructions I gave earlier, which included this command as "start the backend." You may have pasted it then without it standing out.
+
+**To find and stop it:**
+1. Open **Windows Terminal** (the window with tabs). It may be minimized in the taskbar.
+2. Look through the tabs for one ending in lines like `Uvicorn running on http://127.0.0.1:8000` or `Application startup complete.` It will probably also show `GET /books` lines from your testing.
+3. Click in that tab and press **Ctrl+C**. Leave the other tab (the one showing `VITE ... ready` / `localhost:5173`) running.
+
+If you can't find the tab, tell me and I can stop that backend process for you instead. You'd then start it again with the command above from the `backend` folder.
+`````
+
+### Turn 40 — 2026-09-27T14:43:31-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+found it, i stopped the backend but im not seeing a failed to fetch error or any error at all, the search filter still seems to be working
+````
+
+#### Assistance and code contribution
+- Diagnosed why no error appeared: a second, older backend process was still serving port
+  8000. No files modified other than this log. No processes were started or stopped. Offered
+  to stop the older process if the applicant asks.
+- Correction to Turn 39: its port check selected only the first listener on port 8000, so
+  it missed this second backend process.
+
+#### Verification
+- Executed `curl http://localhost:8000/`: returned `{"status":"ok"}` after the applicant
+  stopped the Windows Terminal backend.
+- Executed a PowerShell check: PIDs 42340 and 3788 (the Windows Terminal backend) are gone.
+  Port 8000 is still served on 127.0.0.1 by PID 35788 (`.venv\Scripts\python -m uvicorn
+  app:app --reload`, started 2026-09-26 15:17:06). Its parent chain is python.exe (PID 6428,
+  reloader) → cmd.exe (PID 26288, started 2026-09-26 14:09:37) → explorer.exe.
+
+#### Assistant response — verbatim
+`````markdown
+Good catch. The app isn't wrong: **a second backend is still running**, so the frontend is still getting answers.
+
+What I found on port 8000:
+- The one you stopped (started today at 12:45 in Windows Terminal) is gone.
+- **Another backend, started yesterday at 3:17 PM**, is still running. That's from when you first tested step 1. It runs in a separate **Command Prompt** window (black `cmd.exe` window, opened yesterday around 2:09 PM), not in Windows Terminal. It uses the same code and the same database, so the app behaves exactly the same.
+
+Two backends were listening on the same port at once. Windows allowed that, which is why stopping one changed nothing.
+
+**To stop it:**
+1. Find the **Command Prompt** window in your taskbar. It may be minimized. It will show `Uvicorn running on http://127.0.0.1:8000` near the top, and probably lots of `GET /books` lines.
+2. Click in it and press **Ctrl+C**.
+3. Then change the search in the app. ✅ You should now see the red **"Failed to fetch"** error.
+
+If you can't find that window, I can stop that backend process for you. Just say so. Afterwards, start **one** backend again (in either window) with:
+
+```powershell
+.venv\Scripts\python -m uvicorn app:app --reload
+```
+`````
+
+### Turn 41 — 2026-09-27T14:49:33-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+yes i found the other window thanks. walk me through what happens from start to finish when a person submits a book form
+````
+
+#### Assistance and code contribution
+- Question only. Explained the book-creation flow across `BookForm.tsx`, `App.tsx`,
+  `api/api.ts`, `backend/app.py`, `backend/models.py`, and `backend/db_models.py`, from
+  code already read this session (reviewed, not modified). Noted the missing double-submit
+  protection (step 6). No files modified other than this log.
+- **Observed applicant action:** the applicant reports stopping the second (older)
+  backend window, which is not verified by the assistant.
+
+#### Verification
+Not run (explanation only).
+
+#### Assistant response — verbatim
+`````markdown
+Here's the whole trip, from typing to the book appearing in the list.
+
+### 1. Typing into the form (browser)
+**`BookForm.tsx` → `App.tsx`**
+- Each keystroke calls the input's `onChange`. That calls `update('title', ...)`, which builds a new copy of the form values with that one field changed.
+- The copy goes up to `App`'s `handleBookFormChange`, which saves it with `setBookForm`.
+- React redraws the form with the new values. So `App` always holds the current form data in `bookForm`.
+
+### 2. Clicking "Create Book" (browser)
+**`App.tsx` → `handleCreateBook`**
+- The button's `onSubmit` runs `handleCreateBook()`.
+- It first clears any old error with `setError(null)`.
+- Then it calls `createBook(bookForm)` from the API layer and waits.
+
+### 3. Sending the request (browser → network)
+**`api/api.ts` → `createBook` → `postJson` → `request`**
+- `JSON.stringify` turns the form data into JSON text.
+- `fetch` sends `POST http://localhost:8000/books` with the header `Content-Type: application/json`.
+- The page (port 5173) and the backend (port 8000) count as different sites, so the browser first sends a quick **"is this allowed?"** request. The backend's CORS settings say yes, and then the real POST goes out.
+
+### 4. Checking the data (backend)
+**`backend/app.py` → `create_book`, `backend/models.py` → `BookCreate`**
+- FastAPI reads the JSON and checks it against `BookCreate`:
+  - every field is present
+  - the genre is one of the 6 allowed values
+  - the email looks valid
+- If anything fails, it stops here and sends back **422** with the reasons. Your code never runs.
+- It also opens a database session for this request (`get_db`).
+
+### 5. Saving it (backend → database)
+**`create_book`**
+- `db_models.Book(...)` builds a database row from the data.
+- `db.add` and `db.commit()` run an `INSERT` into the `books` table.
+- `db.refresh` reads the row back, which picks up the new `id` the database assigned.
+- The row is converted to `BookResponse` and sent back as JSON with status **201**. The session is closed.
+
+### 6. Handling the reply (browser)
+**`api.ts` → `request`**
+- If the status is OK, `response.json()` turns the JSON back into a JS object and returns it.
+- If not, `errorMessage` pulls out the backend's reason (for example the email error) and throws it as an error.
+
+### 7. Updating the screen (browser)
+**`App.tsx` → `handleCreateBook`, then the `useEffect`**
+- **On success:**
+  - `setBookForm(initialBookForm)` empties the form.
+  - `setBooksVersion(v => v + 1)` tells the book-list effect to run again.
+  - The effect calls `listBooks` with the current search and genre (`GET /books?...`), then `setBooks` redraws the list.
+  - The new book shows up if it matches the current filters.
+- **On failure:**
+  - The `catch` runs `setError(message)`, and the red error text appears at the top.
+  - The form keeps what the person typed, so they can fix it.
+
+**In one line:** form state → click → `createBook` → JSON POST → FastAPI validates → SQLAlchemy inserts → 201 + JSON → form clears → list refetches → new book appears.
+
+One gap for step 6: nothing disables the button while the request is in flight, so a double-click could create the book twice.
+`````
+
+### Turn 42 — 2026-09-27T15:01:15-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+great. anything that might be incomplete for step 5?
+````
+
+#### Assistance and code contribution
+- Question only. Checked step 5 against the Turn 2 plan. Noted a cosmetic issue from
+  reviewing `CheckoutForm.tsx` and `App.tsx`: the checkout Book dropdown is built from the
+  filtered `books` list. No files modified other than this log.
+- **Observed applicant action:** `backend/libraryconnect.db` is now modified (from the
+  applicant's manual UI testing).
+
+#### Verification
+- Executed `git status --short`: `AI_USAGE.md`, `backend/libraryconnect.db`, and
+  `frontend/src/App.tsx` modified. Latest commit is `4fad9a7 frontend api layer`.
+- Executed `python scripts/check_readiness.py`: `ready=true`.
+- Executed `npx.cmd jest` in `frontend/`: 20 passed, 20 total.
+- The dropdown quirk was found by reading the code and was not reproduced in the browser.
+
+#### Assistant response — verbatim
+`````markdown
+No. Step 5 is complete. I just re-checked:
+- All 6 handlers from the plan are wired up.
+- Frontend tests: **20/20 passed**.
+- `check_readiness.py`: **`ready=true`**.
+
+Loose ends:
+- **Not committed yet.** Commit `frontend/src/App.tsx` and `AI_USAGE.md`. **Don't** commit `backend/libraryconnect.db`. It shows as modified because your testing added books to it.
+- **One small quirk I noticed:** the checkout form's Book dropdown only lists books that match the current search and filter. If you view a book and then filter it out of the list, the dropdown looks blank, even though the checkout would still save to the right book. It's cosmetic. It could be fixed in step 6 by listing all books in that dropdown.
+- **Planned for step 6:** the invisible View Details button, double-submit protection, friendlier error wording, form validation, the empty-list message, and removing the TODO card.
+`````
