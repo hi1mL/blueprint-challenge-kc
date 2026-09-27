@@ -1214,3 +1214,469 @@ A name over 255 characters now gets a clean **422** ("String should have at most
 
 Nothing is committed yet.
 `````
+
+### Turn 25 — 2026-09-26T21:10:22-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Partial
+
+#### User prompt — verbatim
+````text
+okay. move onto step 4.
+````
+
+#### Assistance and code contribution
+- Read `frontend/src/api/api.ts`, `frontend/src/api/api.test.ts`, `frontend/src/types.ts`,
+  `frontend/package.json`, `frontend/tsconfig.app.json`, and the error handling in
+  `frontend/src/App.tsx` (reviewed only).
+- `frontend/src/api/api.ts`: **generated** replacements for the five starter stubs
+  (`listBooks`, `getBook`, `createBook`, `listBookCheckouts`, `createCheckout`) and **new**
+  helpers `errorMessage`, `request`, and `postJson`. `listBooks` uses `URLSearchParams` and
+  omits an empty or blank `q` and `genre === "All"`. `createCheckout` sends `book_id` as a
+  number.
+- Attempted to find Node.js (`node`/`npm` in Git Bash, `Get-Command` in PowerShell, and
+  `C:\Program Files\nodejs\node.exe`). It is not installed, so no frontend tooling could
+  run. Nothing was installed.
+- **Observed applicant action:** `git log` shows a new commit `3a57319 check endpoints done`
+  (step 3 and the Turn 24 improvements), not made by the assistant. At the start of this
+  turn, only `AI_USAGE.md` was modified.
+
+#### Verification
+- Not run: Jest (`api.test.ts`), TypeScript compile, and ESLint could not be executed
+  because Node.js is not installed. The code was only checked by hand against the 8 tests
+  in `api.test.ts` and the `strict` settings in `tsconfig.app.json`.
+- Suggested check for the applicant: `npm ci`, then `npx jest src/api/api.test.ts` from
+  `frontend/`. Expected: 8 passed.
+- Executed `git diff --stat`: only `AI_USAGE.md` and `frontend/src/api/api.ts` changed.
+
+Status is Partial because the step 4 checkpoint (`api.test.ts` passing) has not been
+verified.
+
+> **Correction/update (Turn 28):** the step 4 checkpoint was later verified. The
+> applicant ran `api.test.ts` and got 9 passed. The assistant reproduced this (9 passed)
+> and ran `tsc` and ESLint with no errors. The "8 passed" expectation in this entry's
+> response was wrong: 8 test blocks, but `test.each` expands one of them into 3 runs.
+> This entry's own Status stays Partial, as recorded at the time.
+
+#### Assistant response — verbatim
+`````markdown
+Step 4 is written, but **I couldn't run the tests.** Node.js isn't installed on this machine (`node` and `npm` aren't found), so Jest can't run here. The only file changed is `frontend/src/api/api.ts`.
+
+**What changed:** the five `TODO` stubs now call the backend.
+- **Shared helpers:**
+  - `request` sends the call and throws an error if the response isn't OK.
+  - `postJson` sends JSON with `Content-Type: application/json`.
+  - `errorMessage` turns FastAPI errors into readable text: `"Book not found"`, or the validation messages for a 422.
+- **`listBooks`** builds the query with `URLSearchParams`. It leaves out an empty `q` and `genre: "All"`, and special characters like `C++ & books? #1` are encoded safely.
+- **`getBook`**, **`listBookCheckouts`**: plain GET calls.
+- **`createBook`**, **`createCheckout`**: POST calls. `createCheckout` converts the form's `book_id` from text to a number.
+
+The backend and other frontend files are unchanged. The app still won't work in the browser until step 5 wires these into `App.tsx`.
+
+**Verification:** Not run. I checked the code by hand against all 8 tests in `api.test.ts` and the strict TypeScript settings, but a real test run is the only proof.
+
+**To run the tests yourself:**
+1. Install Node.js LTS from https://nodejs.org. Then open a **new** PowerShell window so it picks up `node`.
+2. From the `frontend` folder:
+
+```powershell
+npm ci
+```
+
+```powershell
+npx jest src/api/api.test.ts
+```
+
+You should see **8 passed**. Don't run the full `npm test` yet. The `App` and component tests are expected to fail until step 5. If any of the 8 fail, paste the output here.
+`````
+
+### Turn 26 — 2026-09-26T21:18:19-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+are u asking me to install nodejs via clipboard command?
+````
+
+#### Assistance and code contribution
+- Question only. Clarified that the Turn 25 instructions link to the official Node.js
+  download page and do not include an install command, and explained what `npm ci` and
+  `npx jest` do. No files read or modified other than this log. Nothing was installed.
+- Also appended to Turn 25 (this turn): repaired a formatting error in its
+  Assistance section, where the Node.js install path had been split across lines by escape characters during logging. Its wording was not changed.
+
+#### Verification
+Not run (question only).
+
+#### Assistant response — verbatim
+`````markdown
+No. There's no command for installing Node.js in my last message. Step 1 is just a link: **you** download the installer from the official site and run it like any other Windows program. I didn't install anything, and I won't install system software on your machine.
+
+To be clear about the steps:
+- **Step 1 (you, in a browser):** go to https://nodejs.org, download the **LTS** Windows installer (`.msi`), and run it with the default options.
+- **Steps 2–3 (the two code blocks):** these are ordinary project commands, and they only work after Node is installed. `npm ci` installs the frontend's packages listed in `frontend/package-lock.json` into `frontend/node_modules`, and it only affects that folder. `npx jest ...` runs the tests.
+
+Always check that a download comes from the official `nodejs.org` site. Installing Node is optional for now. I can keep writing step 5 without it, but none of the frontend code can be tested until it's installed.
+`````
+
+### Turn 27 — 2026-09-26T21:25:26-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+i got a securityerror unauthorized access message upon running command npm ci in frontend
+````
+
+#### Assistance and code contribution
+- Diagnosed the error as PowerShell's execution policy blocking `npm.ps1`. No files modified
+  other than this log. Nothing was installed or reconfigured.
+- Read the app's terminal panel. It showed only a fresh PowerShell prompt, so the
+  applicant's error output was not visible to the assistant.
+- Observed that Node.js is now installed at the default Program Files location (install
+  performed by the applicant, not the assistant).
+
+#### Verification
+- Executed `Get-ExecutionPolicy -List`: every scope was Undefined except `Process = Bypass`
+  (the assistant's own session). Undefined machine-wide means the Windows default
+  (Restricted) applies in the applicant's normal PowerShell windows.
+- Executed a PowerShell check: `npm` is not on the assistant session's PATH, and
+  `npm.cmd` exists in the Node.js install folder (True).
+- The suggested `npm.cmd ci` / `npx.cmd jest` commands were not executed by the assistant,
+  to avoid running at the same time as the applicant's own install.
+
+#### Assistant response — verbatim
+`````markdown
+That's PowerShell's script-blocking rule, not a problem with Node or the project. Typing `npm` in PowerShell runs a small script file, `npm.ps1`, and Windows blocks scripts by default. Your machine uses that default. Node itself installed fine: I can see it in `C:\Program Files\nodejs`.
+
+**Fix: add `.cmd` to the commands.** This runs the regular Windows version of npm, which isn't blocked. Nothing about your security settings changes. From the `frontend` folder:
+
+```powershell
+npm.cmd ci
+```
+
+```powershell
+npx.cmd jest src/api/api.test.ts
+```
+
+You should see **8 passed**. If `npm.cmd` isn't found either, close PowerShell and open a new window, since windows opened before the install don't know where Node is.
+
+Another option is to allow scripts for your user account with `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`. That changes a Windows security setting, so it's your call. The `.cmd` approach works without it.
+`````
+
+### Turn 28 — 2026-09-26T21:30:01-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+i see 9 passed not 8
+````
+
+#### Assistance and code contribution
+- Explained the count: `api.test.ts` has 8 test blocks, and `test.each` expands one of
+  them into 3 cases, so there are 9 tests. The earlier "8 passed" in Turn 25/26/27 was
+  the assistant's error.
+- Added a correction note to Turn 25 (above its response) recording that the checkpoint
+  is now verified. No application code modified.
+- **Observed applicant action:** `frontend/node_modules` now exists, installed by the
+  applicant's `npm ci`.
+
+#### Verification
+- Executed `npx.cmd jest src/api/api.test.ts --verbose` (Node from the default Program
+  Files install): 9 passed, 1 suite passed.
+- Executed `npx.cmd tsc -p tsconfig.app.json --noEmit`: exit 0, no errors.
+- Executed `npx.cmd eslint src/api/api.ts`: exit 0, no problems.
+- Not run: the full `npm test` (the App and component tests are expected to fail until step 5).
+
+#### Assistant response — verbatim
+`````markdown
+9 is correct. My count of 8 was wrong. One of the tests, "listBooks omits inactive filters," is written once but runs **3 times** with different inputs (`undefined`, `{}`, and `{q: "", genre: "All"}`). So 8 tests in the file become 9 test runs. Sorry for the confusion.
+
+Now that Node is installed, I ran the checks myself too:
+- `jest src/api/api.test.ts`: **9 passed**. That matches your run.
+- TypeScript type check (`tsc`): no errors.
+- ESLint on `api.ts`: no problems.
+
+**Step 4 is complete.** I've updated the log: the Turn 25 entry now has a correction noting that its checkpoint is verified.
+`````
+
+### Turn 29 — 2026-09-26T21:34:51-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+how can i test step 4 myself
+````
+
+#### Assistance and code contribution
+- Question only. Gave instructions for the Jest test and for an optional manual check
+  (importing `api.ts` from the browser console on the Vite dev server). No files read or
+  modified other than this log. No new applicant edits observed.
+
+#### Verification
+Not run this turn. The Jest result (9 passed) comes from Turn 28. The browser-console check
+is a suggested check and was not executed by the assistant.
+
+#### Assistant response — verbatim
+`````markdown
+There are two ways to test it.
+
+### 1. The automated tests (you've already done this)
+From `frontend`:
+
+```powershell
+npx.cmd jest src/api/api.test.ts
+```
+
+9 passed means step 4 meets its checkpoint. These tests use a **fake** backend, though, so they only prove the functions send the right requests.
+
+### 2. Try it against the real backend (optional)
+The app's buttons aren't connected until step 5. You can still call the functions directly from the browser console.
+
+1. **Start the backend** in one PowerShell window, from `backend`:
+   ```powershell
+   .venv\Scripts\python -m uvicorn app:app --reload
+   ```
+2. **Start the frontend** in a second window, from `frontend`:
+   ```powershell
+   npm.cmd run dev
+   ```
+3. Open **http://localhost:5173**. The page will still show "TODO" messages, which is expected.
+4. Open the browser console (**F12**, then the **Console** tab) and paste these lines one at a time:
+   ```js
+   const api = await import('/src/api/api.ts')
+   ```
+   ```js
+   await api.listBooks()
+   ```
+   ```js
+   await api.listBooks({ q: 'career', genre: 'All' })
+   ```
+   ```js
+   await api.getBook(999999)
+   ```
+
+What you should see:
+- The first `listBooks` returns the books in your database.
+- The search returns only matching titles.
+- `getBook(999999)` shows a red error: **"Book not found"**. That means the error handling works.
+
+If Chrome shows a warning about pasting, type `allow pasting` and press Enter first. I haven't run this browser check myself; I only ran the automated tests.
+`````
+
+### Turn 30 — 2026-09-27T13:01:13-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+im using microsoft edge, is the console tab accessible through microsoft edge developer tools, i didnt know about f12 before
+````
+
+#### Assistance and code contribution
+- Question only. Explained how to open the Console in Microsoft Edge DevTools. No files read
+  or modified other than this log. No new applicant edits observed.
+
+#### Verification
+Not run (question only). Edge behavior is described from general knowledge and was not
+checked on the applicant's machine.
+
+#### Assistant response — verbatim
+`````markdown
+Yes. Edge's developer tools have the same Console tab, since Edge is built on the same engine as Chrome.
+
+**Ways to open it** (pick one, with the `localhost:5173` page open):
+- **Ctrl+Shift+J** opens straight to the Console. This is the easiest.
+- **F12** opens DevTools. The first time, Edge may ask "Do you want to open DevTools?" Click **Open**.
+- Right-click the page, choose **Inspect**, then click the **Console** tab.
+
+**Finding the Console tab:** it's in the row of tabs at the top of the DevTools panel. If you don't see it, click the **>>** (or **+**) button in that row and choose **Console**. You may also see a "Welcome" tab the first time; you can close it.
+
+**Typing commands:** click the area at the bottom of the Console next to the `>` prompt, paste a line, and press Enter. Edge may also show a warning about pasting. If so, type `allow pasting` and press Enter, then paste again.
+`````
+
+### Turn 31 — 2026-09-27T13:05:10-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+summarize what step 4 achieved
+````
+
+#### Assistance and code contribution
+- Question only. Summarized the Turn 25 changes to `frontend/src/api/api.ts`, from code
+  already written this session. No files read or modified other than this log. No new
+  applicant edits observed.
+
+#### Verification
+Not run this turn. The results cited (9/9 Jest tests, `tsc` and ESLint clean) come from Turn 28.
+
+#### Assistant response — verbatim
+`````markdown
+**Step 4 gave the frontend a way to talk to the backend.** It's the "phone line" between them.
+
+Before step 4, every function in `frontend/src/api/api.ts` just threw a "TODO" error. Now each one calls a real backend endpoint:
+
+| Function | Calls | Used for |
+|---|---|---|
+| `listBooks` | `GET /books?q=&genre=` | the catalog list, search, and genre filter |
+| `getBook` | `GET /books/{id}` | showing one book's details |
+| `createBook` | `POST /books` | the "add a book" form |
+| `listBookCheckouts` | `GET /books/{id}/checkouts` | a book's checkout history |
+| `createCheckout` | `POST /checkouts` | the "record a checkout" form |
+
+**Handled for you inside these functions:**
+- An empty search, or genre "All", isn't sent, so you get all books.
+- Special characters in a search (`&`, `?`, `#`) are sent safely.
+- Form data is sent as JSON, and the checkout's `book_id` is converted from text to a number.
+- Backend errors become readable messages like "Book not found" instead of silent failures.
+
+**What it didn't do yet:** the app's screen doesn't use these functions, so the buttons still show TODO messages. Step 5 connects them in `App.tsx`.
+
+**Proof:** 9/9 API tests pass (you and I both ran them), plus no TypeScript or lint errors. The only file changed was `frontend/src/api/api.ts`.
+`````
+
+### Turn 32 — 2026-09-27T13:12:38-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+just checking in, do POSTS send content-type: application/json according to the original step 4 guidelines, what exactly does that do
+````
+
+#### Assistance and code contribution
+- Question only. Confirmed by searching `frontend/src/api/api.ts` that `postJson` sets
+  `Content-Type: application/json`, and explained its purpose. No application files
+  modified. No new applicant edits observed.
+
+#### Verification
+- Executed `grep` on `frontend/src/api/api.ts`: the header is set on line 41.
+- Executed an ad-hoc TestClient script against a throwaway SQLite DB in the scratchpad,
+  posting the same book JSON string to POST /books: with `Content-Type: application/json`
+  it returned 201; with `text/plain;charset=UTF-8` it returned 422 "Input should be a valid
+  dictionary or object to extract fields from".
+- The CORS preflight behavior was described, not tested in a browser.
+
+#### Assistant response — verbatim
+`````markdown
+**Yes.** Both POSTs (`createBook` and `createCheckout`) go through the `postJson` helper in `api.ts`, which sets it:
+
+```ts
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify(payload),
+```
+
+The `api.test.ts` tests also check for this header on both POSTs, and they pass.
+
+**What it does:** it's a label on the request that tells the backend what format the body is in.
+- `JSON.stringify(payload)` turns the form data into a JSON **text string**.
+- On its own, `fetch` labels a string body as `text/plain`, meaning "just some text."
+- The `application/json` label tells FastAPI "this text is JSON, parse it into fields." FastAPI then checks it against `BookCreate` or `CheckoutCreate`.
+
+**Why it matters:** I tested the same book data against the backend with both labels:
+
+| Content-Type | Result |
+|---|---|
+| `application/json` | **201**, book created |
+| `text/plain` (fetch's default) | **422** "Input should be a valid dictionary or object…", because FastAPI doesn't read it as JSON |
+
+So without the header, every "add book" or "record checkout" would fail even with valid data.
+
+**A side effect, already handled:** because the frontend (port 5173) and backend (port 8000) are different origins, a JSON request makes the browser send a quick "is this allowed?" check first. The backend's CORS settings in `app.py` already allow it, so nothing extra is needed.
+`````
+
+### Turn 33 — 2026-09-27T13:42:11-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+why does data have to travel as text and not as an object
+````
+
+#### Assistance and code contribution
+- Question only (conceptual explanation of serialization). No files read or modified other
+  than this log. No new applicant edits observed.
+
+#### Verification
+Not run (question only).
+
+#### Assistant response — verbatim
+`````markdown
+Because a network can only carry **bytes**: a flat sequence of 1s and 0s. A JavaScript object isn't a sequence of bytes. It lives in the browser's memory.
+
+**Why the object itself can't be sent:**
+- A JS object is scattered pieces in the browser's memory, linked by memory addresses. Those addresses mean nothing on another computer, or even in another program.
+- The backend is **Python**, which stores data in a completely different way. Even if you could copy the browser's memory over, Python couldn't read it.
+
+**So both sides agree on a shared format:**
+1. **Frontend:** `JSON.stringify(payload)` flattens the object into text such as `{"title":"Dune","genre":"Fiction",...}`. This is called **serializing**.
+2. **Network:** that text travels as bytes.
+3. **Backend:** FastAPI reads the text and rebuilds it as a Python object (`BookCreate`). This is **deserializing**.
+
+The response makes the same trip back the other way. That's what `response.json()` in `api.ts` does: it turns the backend's text back into a JS object.
+
+**Why JSON specifically:** almost every language can read and write it, and people can read it too. That's why you can see it in the `/docs` page or the browser's Network tab. Strictly speaking, the data only has to be bytes, not text. Some systems use compact binary formats instead, but JSON is the standard choice for web APIs like this one.
+
+**How this ties back to your last question:** the `Content-Type: application/json` header tells the backend which format those bytes are in, so it knows how to rebuild the object.
+`````
+
+### Turn 34 — 2026-09-27T13:45:01-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+is anything left incomplete for step 4, quick check
+````
+
+#### Assistance and code contribution
+- Question only. Checked step 4 against the Turn 2 plan checkpoint. No files modified
+  other than this log. No new applicant edits observed.
+
+#### Verification
+- Executed `git status --short`: only `AI_USAGE.md` and `frontend/src/api/api.ts` are
+  modified (step 4 uncommitted), and `node_modules` is not listed (ignored by git).
+- Executed `grep TODO frontend/src/api/api.ts`: no matches.
+- Executed `npx.cmd jest src/api/api.test.ts`: 9 passed, 9 total.
+
+#### Assistant response — verbatim
+`````markdown
+No. Step 4 is complete. I just re-checked: no `TODO`s are left in `api.ts`, and the API tests still pass (**9/9**).
+
+The only loose end is that **it isn't committed yet**. Commit `frontend/src/api/api.ts` and `AI_USAGE.md`. `node_modules` is already ignored by git, so it won't sneak in.
+`````
