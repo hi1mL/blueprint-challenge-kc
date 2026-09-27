@@ -462,3 +462,432 @@ Nothing is put in or taken out of the cabinet yet. The endpoints have the key bu
 
 **How it connects to step 2:** step 2 uses that key. The book endpoints will put books into the drawer and read them back out (including searching and filtering).
 `````
+
+### Turn 9 — 2026-09-26T18:34:38-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Blocked
+
+#### User prompt — verbatim
+````text
+ok now build step 2
+````
+
+#### Assistance and code contribution
+Blocked: this turn was interrupted by a safeguard flag (request ID
+`req_011CfT5unjUgsQ2DvkJMHkgk`). Before the safeguard stopped it, this turn modified
+`backend/app.py` to implement the step 2 book endpoints (source: applicant, stated in
+Turn 12). The changes present in the file afterwards were `_book_response`,
+`create_book` (POST /books), `list_books` (GET /books with `q` and `genre`), `get_book`
+(GET /books/{id}), a `from sqlalchemy import select` import, and removal of two
+`# noqa: F401` comments. These were observed and reviewed in Turn 10. The turn's full
+output, including its tool calls, any other actions, and its response, cannot be
+recovered, so there may have been work this entry does not capture.
+
+> **Correction (Turn 12, 2026-09-26T19:04:20-07:00):** the note above replaces an
+> earlier note written in Turn 10. That note said the turn stopped "before any work was
+> done", that "No files were read or modified and no code was written in this turn",
+> and that "the step 2 work was redone in Turn 10". All three statements were wrong.
+> The applicant confirmed that this turn wrote the step 2 code, and Turn 10 only
+> reviewed and tested that code. It did not redo it.
+
+#### Verification
+Unknown. Any checks this turn ran before the interruption cannot be recovered. The
+resulting code was tested later, in Turn 10.
+
+#### Assistant response — verbatim
+None recorded. The turn was interrupted before its output could be captured, and the
+full output cannot be recovered.
+
+### Turn 10 — 2026-09-26T18:47:09-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+Read AGENTS.md and follow its logging rules. The last entry in AI_USAGE.md was interrupted by a safeguard flag (request ID req_011CfT5unjUgsQ2DvkJMHkgk) before any work was done. Mark it Blocked with a note, then implement build step 2: the book endpoints (POST /books, GET /books with q and genre filters, GET /books/{id}). Give me a short summary of what changed.
+````
+
+#### Assistance and code contribution
+- Marked Turn 9 `Blocked` with a note about the safeguard interruption (request ID
+  `req_011CfT5unjUgsQ2DvkJMHkgk`), per the applicant's request.
+- Read `backend/app.py`, `backend/models.py`, `backend/db_models.py`,
+  `backend/database.py`, `backend/tests/test_routes.py`, and the README endpoint table.
+- **Observed pre-existing edits (authorship not determined by the assistant):** at the start
+  of this turn, `backend/app.py` already had uncommitted changes (shown as modified in
+  `git status` before the turn began) implementing all three book endpoints:
+  `_book_response` helper, `create_book` (POST /books, 201), `list_books` (GET /books with
+  case-insensitive title search `q` and exact `genre` filter), `get_book`
+  (GET /books/{id}, 404 if missing), plus a `from sqlalchemy import select` import and
+  removal of two `# noqa: F401` comments. The Turn 9 entry records no work, so the assistant
+  cannot attribute these edits; the applicant should confirm who wrote them.
+  **Correction (Turn 12):** the applicant has since confirmed that these edits were made by
+  Claude Code in the interrupted Turn 9. Turn 9 now records this.
+- The assistant reviewed this code and did not modify it, since it already met the
+  requirements. No application code was generated or modified by the assistant this turn.
+
+#### Verification
+- Executed `backend/.venv/Scripts/python -m pytest -q backend/tests`: 8 passed, 4 failed.
+  All 4 failures are checkout tests (`test_create_checkout_success`,
+  `test_create_checkout_returns_404_for_missing_book`,
+  `test_list_book_checkouts_returns_only_requested_book`,
+  `test_list_book_checkouts_returns_404_for_missing_book`), which fail with 501 because
+  step 3 is not implemented yet. All book tests passed.
+- Executed an ad-hoc TestClient script against a throwaway SQLite DB in the scratchpad
+  (not the applicant's `libraryconnect.db`): POST returned 201 with an id; `q=%` matched
+  only the title containing a literal `%`; `q=""` returned all books; `q=PURE` matched
+  case-insensitively; `genre=Other` filtered correctly; `genre=Mystery` returned 422;
+  `GET /books/1` returned the book; `GET /books/abc` returned 422.
+
+#### Assistant response — verbatim
+`````markdown
+I marked Turn 9 as **Blocked** in `AI_USAGE.md` and noted the safeguard request ID. This turn is logged as Turn 10.
+
+**One thing to check first:** step 2 was already written before I started. `backend/app.py` had uncommitted changes that implement all three book endpoints. My logged turns don't include writing them, so I didn't overwrite anything. I reviewed and tested the code instead, and logged it as "observed edits, author not determined." If you wrote it, or it came from another tool, please note that in the log.
+
+**What's in `backend/app.py` now:**
+- **`POST /books`** saves the book and returns it with its new `id` (status 201).
+- **`GET /books`** lists books in id order.
+  - `q` does a case-insensitive "title contains" search. Characters like `%` and `_` are matched literally.
+  - `genre` filters by exact genre. An invalid genre returns 422.
+- **`GET /books/{id}`** returns the book, or 404 `"Book not found"` if it doesn't exist.
+- There's also a small helper, `_book_response`, and a new `select` import.
+
+**Verification:**
+- `pytest backend/tests`: 8 passed, 4 failed. All 4 failures are the checkout tests, which still return 501 because that's step 3. Every book test passes.
+- I also tested edge cases on a throwaway database (not your `libraryconnect.db`): literal `%` search, empty `q`, mixed case, genre filter, bad genre, and non-numeric id. All behaved correctly.
+
+Nothing has been committed. Next up is step 3, the checkout endpoints.
+`````
+
+### Turn 11 — 2026-09-26T18:52:27-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+are you aware of the next 5 steps that follow step 2, dont do anything yet, im asking
+````
+
+#### Assistance and code contribution
+- Question only. Re-read the Turn 2 build plan in `AI_USAGE.md` and summarized
+  steps 3–7. No application files were read or modified. No new applicant edits observed.
+
+#### Verification
+Not run (question only).
+
+#### Assistant response — verbatim
+`````markdown
+Yes. They come from the build plan I gave you in Turn 2. I re-checked it in `AI_USAGE.md` rather than relying on memory. Nothing else was changed.
+
+**3. Checkout endpoints**
+- `POST /checkouts` and `GET /books/{id}/checkouts`, both returning 404 if the book doesn't exist.
+- Checkpoint: all 12 backend tests pass.
+
+**4. Frontend API layer** (`frontend/src/api/api.ts`)
+- A fetch helper that throws on errors.
+- `listBooks` builds the query string and skips an empty `q` and `genre === 'All'`.
+- POSTs send JSON.
+- Checkpoint: `api.test.ts` passes.
+
+**5. App wiring** (`frontend/src/App.tsx`), one handler at a time:
+- the form `onChange` handlers
+- load books
+- select a book (plus its checkouts)
+- create a book
+- create a checkout
+- error handling
+
+Checkpoint: all Jest tests pass and `check_readiness.py` reports `ready=true`.
+
+**6. UX polish**
+- Required-field validation, an empty-state message, and submit feedback.
+- Remove the "Integration TODO" card and placeholder text, and add light styling.
+
+**7. End-to-end and submission**
+- `docker compose up --build` plus `smoke-test.sh` against Postgres.
+- Push and confirm the CI Grade shows PASS, then open the PR.
+- Add the submission summary to `AI_USAGE.md`.
+
+Steps 1–3 (backend) and step 4 (frontend API) don't depend on each other. Step 5 needs both done first.
+`````
+
+### Turn 12 — 2026-09-26T19:04:20-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+the step 2 code in app.py was written in the previous claude code session before it was eventually flagged. modify the blocked entry to say that the interrupted turn modified backend/app.py before the safeguard stopped it, and note that its full output can't be recovered.
+````
+
+#### Assistance and code contribution
+- Updated only the Turn 9 entry in `AI_USAGE.md`, at the applicant's request. It now
+  records, on the applicant's statement, that the interrupted turn modified
+  `backend/app.py` (step 2 book endpoints) and that its full output cannot be recovered.
+  The earlier incorrect wording is kept, quoted, in a labeled correction note.
+- Added a one-line correction to the Turn 10 authorship note.
+- No application code was read or modified.
+
+#### Verification
+Not run (log edit only).
+
+#### Assistant response — verbatim
+`````markdown
+I've updated the Blocked entry (Turn 9) in `AI_USAGE.md`:
+
+- **What it says now:** the interrupted turn modified `backend/app.py` to add the step 2 book endpoints before the safeguard stopped it. It names the specific changes and says your statement in this turn is the source. It also says the turn's full output can't be recovered. That covers its tool calls, its checks, and its response, so there may be work the entry doesn't capture. The Verification and Response sections now say the same thing.
+- **Corrections, not rewrites:** the log rules say to append corrections instead of quietly rewriting history. So Turn 9 keeps a labeled correction note that quotes the wrong wording it replaced: "before any work was done," "no code was written," and "redone in Turn 10."
+- **Turn 10:** I added a one-line correction there too. It had said the author of the `app.py` edits wasn't known, and it now points to Turn 9.
+
+No code was changed.
+`````
+
+### Turn 13 — 2026-09-26T20:09:54-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+where can i test step 2
+````
+
+#### Assistance and code contribution
+- Question only. Re-read the Turn 6 run walkthrough in `AI_USAGE.md` and gave step 2
+  testing instructions based on it. No application files were read or modified. No new
+  applicant edits observed.
+
+#### Verification
+Not run this turn. The expected pytest result (8 passed, 4 failed) comes from the
+Turn 10 run. The /docs steps are suggested checks and were not executed this turn.
+
+#### Assistant response — verbatim
+`````markdown
+The easiest place is FastAPI's built-in test page at **http://localhost:8000/docs**. It's the same page you used for step 1. The frontend won't help yet, because its buttons aren't wired up until step 5.
+
+### 1. Start the backend
+In PowerShell, from the `backend` folder:
+
+```powershell
+.venv\Scripts\python -m uvicorn app:app --reload
+```
+
+Wait for `Application startup complete.` If the server is already running from before, `--reload` has picked up the step 2 code automatically.
+
+### 2. Try the book endpoints at http://localhost:8000/docs
+On each endpoint, click **Try it out**, then **Execute**.
+
+1. **POST /books**: paste this in and execute. You should get **201**, and the response should include an `id`.
+   ```json
+   {
+     "title": "Career Skills Handbook",
+     "genre": "Reference",
+     "description": "Guide to job readiness",
+     "author": "Career Services Staff",
+     "publisher_email": "careers@example.org",
+     "shelf_location": "REF-CSH-001"
+   }
+   ```
+   Add a second book with a different title and genre so the filters have something to filter.
+2. **GET /books**
+   - Leave both fields blank to get all books.
+   - Set `q` to `career` (any capitalization) to get only matching titles.
+   - Pick a `genre` to get only that genre. Try `q` and `genre` together too.
+3. **GET /books/{book_id}**: use an `id` from step 1 to get that book. Try `999` to get **404 "Book not found"**.
+
+The books are saved in `backend/libraryconnect.db`, so they're still there after a restart.
+
+### 3. (Optional) Run the tests
+From the repo root:
+
+```powershell
+backend\.venv\Scripts\python -m pytest -q backend/tests
+```
+
+Expected: **8 passed, 4 failed**. The 4 failures are the checkout tests, which step 3 will fix.
+`````
+
+### Turn 14 — 2026-09-26T20:27:59-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+where do i run that command from item 3 (run the tests)
+````
+
+#### Assistance and code contribution
+- Question only. Explained that the Turn 13 test command runs from the repo root. No files
+  read or modified other than this log. No new applicant edits observed.
+
+#### Verification
+Not run this turn. The command was run from the repo root in Turn 10 (8 passed, 4 failed).
+
+#### Assistant response — verbatim
+`````markdown
+Run it from the **repo root**. That's the `blueprint-challenge-kc` folder, one level above `backend`.
+
+Open a **second** PowerShell window and leave the server running in the first one. Then:
+
+```powershell
+cd C:\Users\kevin\OneDrive\Desktop\blueprint-challenge-kc
+```
+
+```powershell
+backend\.venv\Scripts\python -m pytest -q backend/tests
+```
+
+Your prompt should end in `blueprint-challenge-kc>` before you run the second command.
+
+If you're already in `backend`, you can type `cd ..` to go up one level instead of the full path.
+`````
+
+### Turn 15 — 2026-09-26T20:30:49-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+upon running i get 8 passed 4 failed and 1 warning, what's the warning refrring to
+````
+
+#### Assistance and code contribution
+- Question only. Explained the pytest warning based on the warnings summary from the
+  assistant's own Turn 10 test run (Starlette test client `DeprecationWarning` about
+  `anyio.abc.BlockingPortal`). The applicant's own output was not seen; they were told how
+  to confirm it is the same warning. No files read or modified other than this log. No new
+  applicant edits observed.
+
+#### Verification
+Not run this turn. The warning text is from the Turn 10 pytest run. The applicant reported
+8 passed, 4 failed, 1 warning from their own run, which matches the Turn 10 result.
+
+#### Assistant response — verbatim
+`````markdown
+That's almost certainly the same warning I got when I ran the tests. It isn't about your code.
+
+```text
+starlette\testclient.py:45: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+```
+
+**What it means:** Starlette is the library FastAPI's test client is built on. Its test client uses a name from another library, `anyio`, that newer versions of anyio have marked as "will be removed someday." Your installed anyio is newer than what that Starlette version expects, so it prints a heads-up.
+
+**Does it matter?** No. It comes from inside `.venv`, not from `app.py` or the tests. The tests still run normally, and it won't affect grading. It would go away if Starlette and FastAPI were upgraded, but that's not worth doing for this challenge.
+
+To confirm yours is the same one, scroll up in the test output to the `warnings summary` section. It should mention `starlette\testclient.py` and `BlockingPortal`. If it says something different, paste it here.
+`````
+
+### Turn 16 — 2026-09-26T20:34:02-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+taking a small step back, how does the search match the titles in GET
+````
+
+#### Assistance and code contribution
+- Question only. Explained how `list_books` in `backend/app.py` matches titles (reviewed,
+  not modified). No files modified other than this log. No new applicant edits observed.
+
+#### Verification
+- Executed a script with the backend venv that compiled the `icontains(..., autoescape=True)`
+  filter to SQL for both dialects. SQLite:
+  `lower(books.title) LIKE '%' || lower('50/%/_off') || '%' ESCAPE '/'`. PostgreSQL:
+  `books.title ILIKE '%%' || '50/%%/_off' || '%%' ESCAPE '/'` (`%%` is the driver's
+  escaping of `%`). No database was queried.
+- The example table in the response is based on the code's logic and was not executed.
+  The Turn 10 ad-hoc run did confirm case-insensitive matching and a literal `%` match.
+
+#### Assistant response — verbatim
+`````markdown
+The search is a **case-insensitive "title contains this text"** match. It's this line in `list_books` in `backend/app.py`:
+
+```python
+query = query.where(db_models.Book.title.icontains(q, autoescape=True))
+```
+
+**In plain terms:** a book matches if the text you typed appears anywhere in its title, whatever the capitalization.
+
+| `q` | "Career Skills Handbook" matches? |
+|---|---|
+| `career` | yes (start of title) |
+| `SKILLS` | yes (middle, different case) |
+| `book` | yes (inside a word, "Hand**book**") |
+| `skills career` | no (words must appear together, in that order) |
+| `carer` | no (no typo tolerance) |
+
+**What happens under the hood:** SQLAlchemy turns it into SQL. I compiled it to check:
+- **SQLite** (your local run): `lower(title) LIKE '%' || lower(q) || '%'`. Both sides are lowercased, and the `%` wildcards on each end mean "anything before or after."
+- **Postgres** (Docker/CI): `title ILIKE '%' || q || '%'`. `ILIKE` is Postgres's built-in case-insensitive `LIKE`.
+
+**Details worth knowing:**
+- **`autoescape=True`:** in SQL `LIKE`, `%` and `_` are wildcards. Autoescape makes them count as plain characters, so searching `100%` finds titles containing "100%" instead of matching everything.
+- **Blank search is ignored:** `if q:` skips the filter when `q` is empty or missing, so you get all books.
+- **Only the title is searched.** Author and description aren't, which matches the README's "search by title."
+- **Spaces aren't trimmed:** `" career"` (with a leading space) wouldn't match a title that starts with "Career."
+- **It combines with genre:** if both are given, a book must match both (AND).
+- Results are always sorted by `id`.
+
+If you want, a small improvement would be to trim spaces (`q.strip()`). It's optional, and nothing requires it.
+`````
+
+### Turn 17 — 2026-09-26T20:37:21-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+keep your answer to me short, is anything left incomplete for step 2
+````
+
+#### Assistance and code contribution
+- Question only. Compared step 2 against the Turn 2 plan checkpoint and ran `git status`.
+  No files modified other than this log.
+- Observed in `git status` (not made by the assistant this turn): modified
+  `backend/libraryconnect.db` and `backend/tests/__pycache__/test_routes.cpython-314-pytest-8.4.2.pyc`,
+  and a new untracked `libraryconnect.db` at the repo root. These are likely from running
+  the server and tests, including the applicant's test run from the repo root reported in
+  Turn 15, but the assistant did not observe their cause.
+
+#### Verification
+- Executed `git status --short`. Output: `AI_USAGE.md`, `backend/__pycache__/app.cpython-314.pyc`,
+  `backend/app.py`, `backend/libraryconnect.db`, and the test `.pyc` were modified; root
+  `libraryconnect.db` was untracked.
+- Test status relies on the Turn 10 run (8 passed, all book tests; 4 checkout failures) and
+  the applicant's matching result reported in Turn 15. Tests were not re-run this turn.
+
+#### Assistant response — verbatim
+`````markdown
+No. Step 2 is complete: all three book endpoints work, and every book test passes.
+
+Loose ends:
+- **Not committed yet.** When you commit, include only `backend/app.py` and `AI_USAGE.md`. Leave out the `.pyc` files, the two `libraryconnect.db` files, and the new one at the repo root that running the tests created.
+- **Optional:** trim spaces in the search with `q.strip()`. Nothing requires it.
+`````

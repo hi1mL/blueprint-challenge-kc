@@ -5,10 +5,11 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 try:
-    from . import db_models  # noqa: F401  (registers tables on Base.metadata)
+    from . import db_models
     from .database import Base, engine, get_db
     from .models import (
         CheckoutCreate,
@@ -18,7 +19,7 @@ try:
         BookResponse,
     )
 except ImportError:
-    import db_models  # noqa: F401  (registers tables on Base.metadata)
+    import db_models
     from database import Base, engine, get_db
     from models import (
         CheckoutCreate,
@@ -52,12 +53,18 @@ def healthcheck() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.post("/books", response_model=BookResponse)
+def _book_response(book: db_models.Book) -> BookResponse:
+    return BookResponse.model_validate(book, from_attributes=True)
+
+
+@app.post("/books", response_model=BookResponse, status_code=201)
 def create_book(payload: BookCreate, db: Session = Depends(get_db)) -> BookResponse:
-    _ = payload
-    _ = db
-    # TODO: Implement persistence and return the newly created book.
-    raise HTTPException(status_code=501, detail="TODO: implement POST /books")
+    # mode="json" stores the genre enum as its plain string value, e.g. "Fiction".
+    book = db_models.Book(**payload.model_dump(mode="json"))
+    db.add(book)
+    db.commit()
+    db.refresh(book)
+    return _book_response(book)
 
 
 @app.get("/books", response_model=list[BookResponse])
@@ -66,19 +73,21 @@ def list_books(
     genre: BookGenre | None = None,
     db: Session = Depends(get_db),
 ) -> list[BookResponse]:
-    _ = db
-    _ = q
-    _ = genre
-    # TODO: Implement search by title (q) and filter by genre.
-    raise HTTPException(status_code=501, detail="TODO: implement GET /books")
+    query = select(db_models.Book).order_by(db_models.Book.id)
+    if q:
+        # Case-insensitive "title contains q"; autoescape treats % and _ literally.
+        query = query.where(db_models.Book.title.icontains(q, autoescape=True))
+    if genre:
+        query = query.where(db_models.Book.genre == genre.value)
+    return [_book_response(book) for book in db.scalars(query)]
 
 
 @app.get("/books/{book_id}", response_model=BookResponse)
 def get_book(book_id: int, db: Session = Depends(get_db)) -> BookResponse:
-    _ = book_id
-    _ = db
-    # TODO: Return a single book by id, or 404 if not found.
-    raise HTTPException(status_code=501, detail="TODO: implement GET /books/{id}")
+    book = db.get(db_models.Book, book_id)
+    if book is None:
+        raise HTTPException(status_code=404, detail="Book not found")
+    return _book_response(book)
 
 
 @app.post("/checkouts", response_model=CheckoutResponse)
