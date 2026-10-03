@@ -2705,11 +2705,134 @@ Tool/assistant: Claude Code (Claude desktop app, Code tab)
 Model: claude-opus-5-5 (Claude Opus 5.5)
 Model identity source: runtime metadata
 Capture: Live
-Status: In progress
+Status: Completed
 
 #### User prompt — verbatim
 ````text
 alright then commit and push
+````
+
+#### Assistance and code contribution
+- With the applicant's approval: committed `AI_USAGE.md` as `caf2d5b` "Update AI usage
+  log (steps 6-7)" (Co-Authored-By trailer) and pushed `libraryconnect_challenge` to
+  `origin` (`hi1mL/blueprint-challenge-kc`), `79a3a5d..caf2d5b`. No application files
+  changed. The committed log has this entry In progress; the completion was written
+  after the push.
+- Checked GitHub Actions via the public GitHub REST API (read-only, unauthenticated).
+
+#### Verification
+- Executed `git push origin libraryconnect_challenge`: succeeded. `git status -sb` shows
+  the branch in sync with origin.
+- Executed `curl https://api.github.com/repos/hi1mL/blueprint-challenge-kc/actions/runs`:
+  `total_count` 0 (no workflow runs on the fork). The repo API shows `fork: true`, parent
+  `stevensblueprint/blueprint-challenge-fa26`, public. The conclusion that Actions is
+  disabled on the fork is an inference, not confirmed in the repo settings.
+- The CI Grade has not been observed.
+
+#### Assistant response — verbatim
+`````markdown
+Committed and pushed. Your fork's `libraryconnect_challenge` now has:
+- `caf2d5b` Update AI usage log (steps 6-7)
+- `0b0fda4` step 6: UX polish
+
+**But CI didn't run.** GitHub reports **zero workflow runs ever** on your fork (`hi1mL/blueprint-challenge-kc`), even for your earlier pushes. That almost always means **GitHub Actions is turned off on the fork**, which is GitHub's default for forks.
+
+**To get the Grade, either:**
+- **Enable Actions on your fork:** go to your repo on github.com → **Actions** tab → click **"I understand my workflows, go ahead and enable them."** That alone won't run anything, so then rerun it: either use **Actions → Challenge tests → Run workflow** on `libraryconnect_challenge` (the workflow supports manual runs), or push again.
+- **Or open the PR** against `stevensblueprint/blueprint-challenge-fa26` `main`. The workflow also runs on pull requests there, though a maintainer may need to approve the run for first-time contributors.
+
+Then check that **Grade** shows **PASS**.
+
+Note: this turn's log entry was finished after the commit, so `AI_USAGE.md` shows as modified again. It'll go in with the submission summary.
+
+**Next:** tell me once Actions is enabled, or the PR is open, and I'll check the result. I can also draft the PR title and description now if you'd like.
+`````
+
+### Turn 54 — 2026-10-02T20:40:07-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+actions is on and the tests seem to pass
+````
+
+#### Assistance and code contribution
+- Verified the applicant's report through the public GitHub REST API (read-only). No files
+  modified other than this log.
+- **Observed applicant action:** GitHub Actions was enabled on the fork and a
+  `workflow_dispatch` run was started (by the applicant, not the assistant).
+
+#### Verification
+- Executed `curl .../actions/runs`: 1 run, id 37093837402, branch
+  `libraryconnect_challenge`, sha `caf2d5b`, event `workflow_dispatch`, completed/success.
+- Executed `curl .../actions/runs/37093837402/jobs`: Submission readiness, Backend tests,
+  Frontend tests, and Grade all completed/success.
+
+#### Assistant response — verbatim
+`````markdown
+Confirmed. I checked the run through GitHub's API:
+
+| Job | Result |
+|---|---|
+| Submission readiness | ✅ success |
+| Backend tests | ✅ success |
+| Frontend tests | ✅ success |
+| **Grade** | ✅ **success (PASS)** |
+
+This is run `37093837402` on commit `caf2d5b`, your latest, which you started manually. The Grade job only succeeds when both test suites pass, so this is a real **PASS**, not "skipped."
+
+**What's left in step 7:**
+1. **Submission summary** in `AI_USAGE.md`: tools and models, who contributed what by file, verification, and gaps in what the log captured. Starter code is kept separate from your changes.
+2. **Commit and push** that.
+3. **Open the PR** on github.com: your branch → `stevensblueprint/blueprint-challenge-fa26` `main`, titled `[Your Name] - …`.
+
+Want me to write the submission summary and draft the PR title and description now? I'll show you both before committing anything.
+`````
+
+## Submission Summary
+Written by: Kevin Cruz
+
+## Tools and models
+- Claude Code, models: Opus 5.5
+- Claude Chat: used to review my css changes for app.css, and help me locate errors in app.tsx for step 6
+
+## Work by feature
+- Backend foundation: files (like backend/app.py) were written by claude code
+- Book endpoints (POST, /books, GET /books with q and genre, GET /books/{id}): written but interrupted by a claude Code sessions raising a safety flag, reviewed and tested in a new, documented session
+- checkout endpoints (POST /checkouts, GET /books/{id}/checkouts): written by claude code
+- frontend api calls: written by claude code; i added the friendlier connection message
+- app wiring (frontend/src/App.tsx): written by claude code
+- UX polish (app.tsx, app.css): I wrote (with some revision for css from claude code) revised code for both, but skipped api.ts, which was oriignally listed in the plan
+
+## Starter code vs my changes
+the repo came with a starter react frontend, fastapi backend, and tests. my changes completed the starter todos in [files]. the tests and github workflows werent modified
+
+## Verification
+- Backend tests (pytest): pass/fail & number of tests
+- Frontend tests (Jest): pass/fail & number of tests
+- Manual testing: ran the app locally on my end, created books, searched, and filtered, and created checkouts and tested invalid input
+- GitHub Grade on final commit: PASS
+
+## Known gaps in the log
+- Turn 9 was stopped mid-run by a safety flag. it had partial output (step 2 code) that interfered with the completion of step 2, but not final result
+
+## Self-reported AI contribution
+About 95% of the code was written by Ai and 5% by me, the largest part I wrote on my own was for step 6, though it was minimal relative to all the other code produced for all other moving parts.
+
+### Turn 55 — 2026-10-02T20:56:20-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: In progress
+
+#### User prompt — verbatim
+````text
+commit the summary, i just made the change
 ````
 
 #### Assistance and code contribution
