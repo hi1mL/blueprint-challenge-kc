@@ -38,12 +38,23 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   // Bumping this re-runs the book list effect (e.g. after creating a book).
   const [booksVersion, setBooksVersion] = useState(0)
+  const [booksLoading, setBooksLoading] = useState(true)
+  const [bookSubmitting, setBookSubmitting] = useState(false)
+  const [bookSuccess, setBookSuccess] = useState<string | null>(null)
+  const [bookError, setBookError] = useState<string | null>(null)
+  const [checkoutSubmitting, setCheckoutSubmitting] = useState(false)
+  const [checkoutSuccess, setCheckoutSuccess] = useState<string | null>(null)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
+  const [allBooks, setAllBooks] = useState<Book[]>([])
   // Id of the most recently clicked book, so a slow earlier response can't overwrite it.
   const latestSelectedId = useRef<number | null>(null)
+  const bookSubmittingRef = useRef(false)
+  const checkoutSubmittingRef = useRef(false)
 
   // Load books on mount and whenever the search, genre, or booksVersion changes.
   useEffect(() => {
     let ignore = false
+    setBooksLoading(true)
     listBooks({ q: search, genre: genreFilter })
       .then((result) => {
         if (ignore) return
@@ -53,11 +64,28 @@ function App() {
       .catch((err: unknown) => {
         if (!ignore) setError(errorText(err))
       })
-    // Ignore responses for an older search once a newer one has started.
+      .finally(() => {
+        if (!ignore) setBooksLoading(false)
+      })
     return () => {
       ignore = true
     }
   }, [search, genreFilter, booksVersion])
+
+  // full unfiltered list for the checkoutddropdown, reloads after book is created
+  useEffect(() => {
+    let ignore = false
+    listBooks({ q: '', genre: 'All' })
+      .then((result) => {
+        if (!ignore) setAllBooks(result)
+      })
+      .catch((err: unknown) => {
+        if (!ignore) setError(errorText(err))
+      })
+    return () => {
+      ignore = true
+    }
+  }, [booksVersion])
 
   function handleLoadBooks() {
     setBooksVersion((version) => version + 1)
@@ -79,37 +107,54 @@ function App() {
 
   function handleBookFormChange(next: BookFormValues) {
     setBookForm(next)
+    setBookSuccess(null)
   }
 
   function handleCheckoutFormChange(next: CheckoutFormValues) {
     setCheckoutForm(next)
+    setCheckoutSuccess(null)
   }
 
   async function handleCreateBook() {
-    setError(null)
+    if (bookSubmittingRef.current) return
+    bookSubmittingRef.current = true
+    setBookSubmitting(true)
+    setBookError(null)
+    setBookSuccess(null)
     try {
       await createBook(bookForm)
+      setBookSuccess(`Added "${bookForm.title}" to the catalog.`)
       setBookForm(initialBookForm)
-      // Refetch so the new book shows up only if it matches the current filters.
       setBooksVersion((version) => version + 1)
     } catch (err) {
-      setError(errorText(err))
+      setBookError(errorText(err))
+    } finally {
+      bookSubmittingRef.current = false
+      setBookSubmitting(false)
     }
   }
 
   async function handleCreateCheckout() {
-    setError(null)
+    if (checkoutSubmittingRef.current) return      // new
+    checkoutSubmittingRef.current = true
+    setCheckoutSubmitting(true)
+    setCheckoutError(null)
+    setCheckoutSuccess(null)
     try {
       const created = await createCheckout(checkoutForm)
       if (selectedBook && created.book_id === selectedBook.id) {
         setBookCheckouts((checkouts) => [...checkouts, created])
       }
+      setCheckoutSuccess(`Checkout recorded for ${checkoutForm.patron_name}.`)
       setCheckoutForm({
         ...initialCheckoutForm,
         book_id: selectedBook ? String(selectedBook.id) : '',
       })
     } catch (err) {
-      setError(errorText(err))
+      setCheckoutError(errorText(err))
+    } finally {
+      checkoutSubmittingRef.current = false
+      setCheckoutSubmitting(false)
     }
   }
 
@@ -117,17 +162,13 @@ function App() {
     <main className="layout">
       <header>
         <h1>LibraryConnect Resource Hub</h1>
-        <p>Starter frontend scaffold with TODOs for API integration.</p>
+        <p>Manage the catalog and record checkouts</p>
       </header>
 
       {error ? <p className="error">{error}</p> : null}
 
       <section className="card">
-        <h2>Integration TODO</h2>
-        <p>
-          Route handlers, form wiring, and API calls are intentionally left as TODOs for the team.
-        </p>
-        <button onClick={() => void handleLoadBooks()}>Load Books (TODO API)</button>
+        <button onClick={() => void handleLoadBooks()}>Load Books</button>
       </section>
 
       <BookList
@@ -138,6 +179,7 @@ function App() {
         onGenreChange={setGenreFilter}
         onSelectBook={(bookId) => void handleSelectBook(bookId)}
         genres={GENRES}
+        loading={booksLoading}
       />
 
       <BookForm
@@ -145,15 +187,21 @@ function App() {
         genres={GENRES}
         onChange={handleBookFormChange}
         onSubmit={() => void handleCreateBook()}
+        submitting={bookSubmitting}
+        successMessage={bookSuccess}
+        errorMessage={bookError}
       />
 
       <BookDetail book={selectedBook} checkouts={bookCheckouts} />
 
       <CheckoutForm
         values={checkoutForm}
-        books={books}
+        books={allBooks}
         onChange={handleCheckoutFormChange}
         onSubmit={() => void handleCreateCheckout()}
+        submitting={checkoutSubmitting}
+        successMessage={checkoutSuccess}
+        errorMessage={checkoutError}
       />
     </main>
   )
