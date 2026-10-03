@@ -2804,7 +2804,7 @@ Written by: Kevin Cruz
 - Backend foundation: files (like backend/app.py) were written by claude code
 - Book endpoints (POST, /books, GET /books with q and genre, GET /books/{id}): written but interrupted by a claude Code sessions raising a safety flag, reviewed and tested in a new, documented session
 - checkout endpoints (POST /checkouts, GET /books/{id}/checkouts): written by claude code
-- frontend api calls: written by claude code; i added the friendlier connection message
+- frontend api calls: written by claude code
 - app wiring (frontend/src/App.tsx): written by claude code
 - UX polish (app.tsx, app.css): I wrote (with some revision for css from claude code) revised code for both, but skipped api.ts, which was oriignally listed in the plan
 
@@ -2818,28 +2818,7 @@ the repo came with a starter react frontend, fastapi backend, and tests. my chan
 - GitHub Grade on final commit: PASS
 
 ## Known gaps in the log
-- Turn 9 was stopped mid-run by a safety flag. it had partial output (step 2 code) that interfered with the completion of step 2, but not final result
+- Turn 9 was stopped mid-run by a safety flag. it had partial output (step 2 code) that interfered with the completion of step 2, but not final result. Turn 43 was also stopped mid-run by a safety classifier.
 
 ## Self-reported AI contribution
 About 95% of the code was written by Ai and 5% by me, the largest part I wrote on my own was for step 6, though it was minimal relative to all the other code produced for all other moving parts.
-
-### Turn 55 — 2026-10-02T20:56:20-07:00
-Tool/assistant: Claude Code (Claude desktop app, Code tab)
-Model: claude-opus-5-5 (Claude Opus 5.5)
-Model identity source: runtime metadata
-Capture: Live
-Status: In progress
-
-#### User prompt — verbatim
-````text
-commit the summary, i just made the change
-````
-
-#### Assistance and code contribution
-In progress.
-
-#### Verification
-Not run.
-
-#### Assistant response — verbatim
-In progress.
