@@ -2537,7 +2537,7 @@ Tool/assistant: Claude Code (Claude desktop app, Code tab)
 Model: claude-opus-5-5 (Claude Opus 5.5)
 Model identity source: runtime metadata
 Capture: Live
-Status: In progress
+Status: Completed
 
 #### User prompt — verbatim
 ````text
@@ -2565,6 +2565,152 @@ write or edit them.
 - The four component files (`BookForm.tsx`, `CheckoutForm.tsx`, `BookList.tsx`,
   `BookDetail.tsx`) contain the assistant's Turn 43 changes. No applicant changes were
   identified in them.
+
+#### Assistance and code contribution
+- Re-checked the applicant's latest `App.tsx` edits before committing. Observed applicant
+  changes since Turn 49: `checkoutSubmittingRef.current = false` added in `finally`, the
+  header text set to "Manage the catalog and record checkouts", and the card text removed
+  (the card now holds only the Load Books button).
+- Added the applicant authorship note above (log text only).
+- Staged exactly 7 files (`AI_USAGE.md`, `frontend/src/App.css`, `frontend/src/App.tsx`,
+  and the four component files) and created commit `0b0fda4` "step 6: UX polish
+  (validation, feedback, styling)" on branch `libraryconnect_challenge`, with the
+  Co-Authored-By trailer. Not pushed. The committed `AI_USAGE.md` contains this entry
+  while it was still In progress; the completion below was written after the commit.
+
+#### Verification
+- Executed from `frontend/`: `npx.cmd tsc -b` exit 0; `npx.cmd eslint .` exit 0;
+  `npx.cmd jest`: 20 passed.
+- Executed `python scripts/check_readiness.py`: `ready=true`. Backend pytest: 12 passed.
+- Executed `git status --short` before the commit (only the 7 intended files staged) and
+  after (clean). `git log --oneline -2` shows `0b0fda4` on top of `79a3a5d`.
+- The two-checkouts-in-a-row check in the real UI was not run by the assistant.
+
+#### Assistant response — verbatim
+`````markdown
+Done. Step 6 is committed as **`0b0fda4` "step 6: UX polish (validation, feedback, styling)"** on `libraryconnect_challenge`. Nothing was pushed.
+
+**Before committing, I re-checked your latest edits:**
+- The checkout double-submit ref is now reset in `finally` ✅
+- The header reads "Manage the catalog and record checkouts" ✅
+- `tsc` and ESLint are clean. Frontend **20/20**, backend **12/12**, and `ready=true`.
+
+**What's in the commit (7 files):**
+- `App.tsx` and `App.css`, your step 6 work
+- the 4 component files, my earlier step 6 work
+- `AI_USAGE.md`, the log
+
+`libraryconnect.db` wasn't included. The working tree was clean afterwards.
+
+**The note:** I added an "Applicant authorship note — step 6" to this turn's entry in `AI_USAGE.md`. It records, as stated by you, that you wrote the `App.tsx` and `App.css` step 6 changes (including the review fixes) and skipped the "Failed to fetch" message. It also records that I only reviewed those changes, while the four component files contain my Turn 43 work.
+
+**Two small things:**
+- The old card still holds a lone **Load Books** button. That works, and it's your call, but it's no longer needed since the list loads automatically.
+- This turn's log entry is finished *after* the commit, so `AI_USAGE.md` will show as modified again. It'll go into your next commit.
+
+**Next up is step 7:** a Docker/Postgres check, then push, the CI Grade, the PR, and the submission summary.
+`````
+
+### Turn 51 — 2026-10-02T20:30:27-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Partial
+
+#### User prompt — verbatim
+````text
+move onto step 7
+````
+
+#### Assistance and code contribution
+- Read `scripts/smoke-test.sh`, `.github/workflows/tests.yml`, and the README run/grading
+  and submission sections (reviewed only). Checked the git remote and branch tracking and
+  whether `docker` and `gh` are installed (neither is). No application files modified.
+- **Observed applicant action:** the backend and frontend dev servers were running
+  (started by the applicant).
+- Did not push, commit, or open a PR. Asked the applicant for confirmation before
+  publishing.
+
+#### Verification
+- Executed `MAX_ATTEMPTS=2 bash scripts/smoke-test.sh` against the applicant's local
+  servers (SQLite backend, Vite dev server, not Docker): all three checks `[ok]`, exit 0.
+- Executed `python scripts/check_readiness.py --self-test`: "Readiness checks passed."
+- Executed `npm.cmd test -- --ci` in `frontend/`: 3 suites, 20 tests passed.
+- Executed `npm.cmd run build`: built successfully. `frontend/dist` is git-ignored
+  (`frontend/.gitignore:11`).
+- `git branch -vv`: `libraryconnect_challenge` is ahead of `origin` by 1 (the step 6 commit).
+- Not run: `docker compose up --build` and Postgres (Docker not installed), and the GitHub
+  CI run (nothing pushed yet).
+
+Status Partial: push, the CI Grade check, the PR, and the submission summary are pending
+the applicant's confirmation.
+
+#### Assistant response — verbatim
+`````markdown
+Step 7 has started. I've done the local checks, and the next steps need your go-ahead, because they publish to GitHub.
+
+### ✅ Done locally
+- **Smoke test** (`scripts/smoke-test.sh`) against your running servers: backend health ✅, `/docs` ✅, frontend HTML ✅.
+- **The same commands CI runs:**
+  - readiness self-test ✅ and `ready=true` ✅
+  - frontend `npm test -- --ci`: **20/20** ✅
+  - backend `pytest`: **12/12** ✅ (last run this session, at the step 6 commit)
+- **Production build** (`npm run build`) succeeds. The output folder `dist/` is git-ignored.
+
+### ⚠️ Can't do here: Docker + Postgres
+Docker isn't installed, so I can't run `docker compose up --build` or test against real Postgres. Per the README, **grading doesn't need Docker**: CI runs the tests with SQLite. The code paths that differ on Postgres (case-insensitive search uses `ILIKE`, the patron-name length limit, dates) are handled. Only a real Postgres run would confirm them, though. To do it, install Docker Desktop and run `docker compose up --build` from the repo root.
+
+### Next, waiting on you
+1. **Commit the latest `AI_USAGE.md` updates.** It's the only uncommitted file.
+2. **Push** `libraryconnect_challenge` to your fork (`hi1mL/blueprint-challenge-kc`). You're 1 commit ahead (step 6). The push triggers the **Challenge tests** workflow, and you then check that **Grade** shows **PASS**.
+3. **Open the PR.** The GitHub CLI isn't installed, so you'd open it on github.com from your branch against `main` of the original repo, titled `[Your Name] - …` as the README asks. I can draft the title and description.
+4. **Submission summary** in `AI_USAGE.md`: tools and models, contributions by file, verification, and capture gaps. I'd add it last, so it reflects the CI result.
+
+**Should I commit `AI_USAGE.md` and push the branch now?** I won't push until you say yes.
+`````
+
+### Turn 52 — 2026-10-02T20:33:57-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: Completed
+
+#### User prompt — verbatim
+````text
+how long would installing and running docker take (a time estimate), short answer
+````
+
+#### Assistance and code contribution
+- Question only. Gave a rough time estimate for installing Docker Desktop and running the
+  stack. No files read or modified other than this log.
+
+#### Verification
+Not run. The estimate is general knowledge, not measured on the applicant's machine.
+
+#### Assistant response — verbatim
+`````markdown
+Roughly **30–60 minutes** for the first time. This is an estimate, not measured on your machine.
+
+- **Install Docker Desktop:** about 10–20 min. The download is around 500 MB, and it usually needs a **restart** plus WSL 2 setup on Windows.
+- **First `docker compose up --build`:** about 5–15 min. It downloads the Postgres, Python, and Node images and installs dependencies.
+- **Smoke test plus clicking through:** about 5 min.
+
+After the first time, startups take under a minute. It's optional, since grading doesn't need Docker.
+`````
+
+### Turn 53 — 2026-10-02T20:34:52-07:00
+Tool/assistant: Claude Code (Claude desktop app, Code tab)
+Model: claude-opus-5-5 (Claude Opus 5.5)
+Model identity source: runtime metadata
+Capture: Live
+Status: In progress
+
+#### User prompt — verbatim
+````text
+alright then commit and push
+````
 
 #### Assistance and code contribution
 In progress.
